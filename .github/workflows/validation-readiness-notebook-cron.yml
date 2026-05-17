@@ -1,5 +1,8 @@
 name: Validation Readiness Notebook Cron
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   schedule:
     - cron: '*/20 * * * *'
