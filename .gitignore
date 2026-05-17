@@ -1,0 +1,58 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.log
+logs/
+*.tmp
+*.temp
+
+# Local dataset (never commit)
+dataset_raw/
+*.pt
+*.pth
+*.onnx
+*.tflite
+
+# Training and generated artifacts
+yolo_training/runs/
+yolo_training/**/pose_dataset/
+yolo_training/**/labels_pose/
+yolo_training/**/labelme_json_stanford_screening/
+yolo_training/**/review_queue/
+yolo_training/**/reports/*.csv
+yolo_training/**/annotation_batches/
+yolo_training/**/subsets/
+yolo_training/**/images/all/
+yolo_training/**/images/train/
+yolo_training/**/images/val/
+
+# Generated local outputs
+contact_sheet.html
+scrape.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
