@@ -1,0 +1,15 @@
+{
+  "active_priority_phase": "phase1",
+  "phase1_min_confidence": 0.75,
+  "phase_groups": {
+    "phase1": [
+      "ground_ref",
+      "front_wheel_center",
+      "front_wheel_ground",
+      "rear_wheel_center",
+      "rear_wheel_ground"
+    ],
+    "phase2": [],
+    "phase3": []
+  }
+}

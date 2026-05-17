@@ -58,6 +58,16 @@ AGENT1_PRIORITY_CONFIG_FILE = SDI_HELPER_ROOT / "config" / "agent1_keypoint_prio
 # Phase 1 model confidence threshold
 WHEEL_DETECTION_CONF_THRESHOLD = 0.25
 
+REVIEW_HIGH = "REVIEW_HIGH"
+REVIEW_MEDIUM = "REVIEW_MEDIUM"
+REVIEW_LOW = "REVIEW_LOW"
+
+LEGACY_REVIEW_PRIORITY_MAP = {
+    REVIEW_HIGH: "HIGH",
+    REVIEW_MEDIUM: "MEDIUM",
+    REVIEW_LOW: "LOW",
+}
+
 DEFAULT_KEYPOINT_PHASES: Dict[str, List[str]] = {
     "phase1": [
         "front_wheel_center",
@@ -251,7 +261,7 @@ class KeypointSuggester:
                 avg_confidence=0.0,
                 validation_warnings=["File already exists"],
                 quality_score=0.0,
-                review_priority="HIGH",
+                review_priority=REVIEW_HIGH,
                 orientation="unknown",
                 out_of_frame_count=0,
             )
@@ -352,7 +362,7 @@ class KeypointSuggester:
                 avg_confidence=0.0,
                 validation_warnings=[],
                 quality_score=0.0,
-                review_priority="HIGH",
+                review_priority=REVIEW_HIGH,
                 orientation="unknown",
                 out_of_frame_count=0,
                 error=str(e),
@@ -399,11 +409,11 @@ class KeypointSuggester:
         )
 
         if has_non_90 or has_phase1_low_conf or score < 0.55 or source_detections == 0 or out_of_frame_count > 2:
-            priority = "HIGH"
+            priority = REVIEW_HIGH
         elif score < 0.75:
-            priority = "MEDIUM"
+            priority = REVIEW_MEDIUM
         else:
-            priority = "LOW"
+            priority = REVIEW_LOW
         return score, priority
 
     def prelabel_wheelbox_dir(
@@ -885,6 +895,7 @@ def _write_quality_report(results: List[SuggestionResult], report_path: Path) ->
                 "avg_confidence",
                 "quality_score",
                 "review_priority",
+                "review_priority_legacy",
                 "orientation",
                 "out_of_frame_count",
                 "warnings",
@@ -901,6 +912,7 @@ def _write_quality_report(results: List[SuggestionResult], report_path: Path) ->
                     f"{r.avg_confidence:.4f}",
                     f"{r.quality_score:.4f}",
                     r.review_priority,
+                    LEGACY_REVIEW_PRIORITY_MAP.get(r.review_priority, r.review_priority),
                     r.orientation,
                     r.out_of_frame_count,
                     " | ".join(r.validation_warnings),
@@ -1164,13 +1176,14 @@ def main():
             avg_quality = np.mean([r.quality_score for r in successful])
             print(f"Avg quality score: {avg_quality:.3f}")
 
-            pri_counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+            pri_counts = {REVIEW_HIGH: 0, REVIEW_MEDIUM: 0, REVIEW_LOW: 0}
             for r in successful:
                 pri_counts[r.review_priority] = pri_counts.get(r.review_priority, 0) + 1
             print("Review priority:")
-            print(f"  HIGH:   {pri_counts.get('HIGH', 0)}")
-            print(f"  MEDIUM: {pri_counts.get('MEDIUM', 0)}")
-            print(f"  LOW:    {pri_counts.get('LOW', 0)}")
+            print(f"  {REVIEW_HIGH}:   {pri_counts.get(REVIEW_HIGH, 0)}")
+            print(f"  {REVIEW_MEDIUM}: {pri_counts.get(REVIEW_MEDIUM, 0)}")
+            print(f"  {REVIEW_LOW}:    {pri_counts.get(REVIEW_LOW, 0)}")
+            print("  Note: REVIEW_LOW means good image quality (lowest review urgency).")
             
             warning_count = sum(len(r.validation_warnings) for r in successful)
             print(f"Geometry warnings: {warning_count} across {len(successful)} images")

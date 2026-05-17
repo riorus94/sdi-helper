@@ -1,0 +1,51 @@
+name: Agent1 Labeling Every 10 Minutes
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdi-helper-agent1-labeling
+  cancel-in-progress: false
+
+jobs:
+  labeling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run Agent 1 labeling (5 keypoints, no roof_apex)
+        run: |
+          python scripts/suggest_keypoints.py \
+            --image-dir dataset_raw/images/train/side \
+            --output yolo_training/side_view_dataset/labelme_json_stanford_screening \
+            --priority-config config/agent1_keypoint_priority_5kp_no_roof_apex.json \
+            --phase-only phase1 \
+            --overwrite
+
+      - name: Upload labeling logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: labeling-logs-${{ github.run_number }}
+          path: |
+            logs/
+          if-no-files-found: ignore
