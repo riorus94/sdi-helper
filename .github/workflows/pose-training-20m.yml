@@ -54,17 +54,57 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      - name: Select LabelMe JSON input directory
+        id: pose_input
+        shell: bash
+        run: |
+          set -euo pipefail
+          primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
+          fallback="yolo_training/side_view_dataset/labelme_json"
+
+          primary_count=$(find "$primary" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
+          fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
+
+          if [ "${primary_count}" -gt 0 ]; then
+            selected="$primary"
+            selected_count="$primary_count"
+          elif [ "${fallback_count}" -gt 0 ]; then
+            selected="$fallback"
+            selected_count="$fallback_count"
+          else
+            selected=""
+            selected_count="0"
+          fi
+
+          echo "selected_json_dir=$selected" >> "$GITHUB_OUTPUT"
+          echo "json_count=$selected_count" >> "$GITHUB_OUTPUT"
+
+          if [ "$selected_count" -gt 0 ]; then
+            echo "should_train=true" >> "$GITHUB_OUTPUT"
+            echo "Using LabelMe JSON source: $selected ($selected_count files)"
+          else
+            echo "should_train=false" >> "$GITHUB_OUTPUT"
+            echo "No LabelMe JSON files found in either $primary or $fallback. Skipping pose training for this run."
+          fi
+
       - name: Build 5KP YOLO pose labels from LabelMe JSON
+        if: ${{ steps.pose_input.outputs.should_train == 'true' }}
         run: |
           python yolo_training/labelme_to_yolo_pose.py \
-            --input yolo_training/side_view_dataset/labelme_json_stanford_screening \
+            --input "${{ steps.pose_input.outputs.selected_json_dir }}" \
             --output yolo_training/side_view_dataset/labels_pose_5kp_no_roof \
             --img-dir dataset_raw/images/train/side \
             --keypoints ground_ref,front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground
 
       - name: Run pose training
+        if: ${{ steps.pose_input.outputs.should_train == 'true' }}
         run: |
           python yolo_training/train_pose.py
+
+      - name: Skip note (no annotations)
+        if: ${{ steps.pose_input.outputs.should_train != 'true' }}
+        run: |
+          echo "Pose training skipped due to empty annotation JSON sources."
 
       - name: Upload training artifacts
         if: always()
@@ -104,17 +144,57 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      - name: Select LabelMe JSON input directory
+        id: pose_input
+        shell: bash
+        run: |
+          set -euo pipefail
+          primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
+          fallback="yolo_training/side_view_dataset/labelme_json"
+
+          primary_count=$(find "$primary" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
+          fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
+
+          if [ "${primary_count}" -gt 0 ]; then
+            selected="$primary"
+            selected_count="$primary_count"
+          elif [ "${fallback_count}" -gt 0 ]; then
+            selected="$fallback"
+            selected_count="$fallback_count"
+          else
+            selected=""
+            selected_count="0"
+          fi
+
+          echo "selected_json_dir=$selected" >> "$GITHUB_OUTPUT"
+          echo "json_count=$selected_count" >> "$GITHUB_OUTPUT"
+
+          if [ "$selected_count" -gt 0 ]; then
+            echo "should_train=true" >> "$GITHUB_OUTPUT"
+            echo "Using LabelMe JSON source: $selected ($selected_count files)"
+          else
+            echo "should_train=false" >> "$GITHUB_OUTPUT"
+            echo "No LabelMe JSON files found in either $primary or $fallback. Skipping pose training for this run."
+          fi
+
       - name: Build 5KP YOLO pose labels from LabelMe JSON
+        if: ${{ steps.pose_input.outputs.should_train == 'true' }}
         run: |
           python yolo_training/labelme_to_yolo_pose.py \
-            --input yolo_training/side_view_dataset/labelme_json_stanford_screening \
+            --input "${{ steps.pose_input.outputs.selected_json_dir }}" \
             --output yolo_training/side_view_dataset/labels_pose_5kp_no_roof \
             --img-dir dataset_raw/images/train/side \
             --keypoints ground_ref,front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground
 
       - name: Run pose training
+        if: ${{ steps.pose_input.outputs.should_train == 'true' }}
         run: |
           python yolo_training/train_pose.py
+
+      - name: Skip note (no annotations)
+        if: ${{ steps.pose_input.outputs.should_train != 'true' }}
+        run: |
+          echo "Pose training skipped due to empty annotation JSON sources."
 
       - name: Upload training artifacts
         if: always()

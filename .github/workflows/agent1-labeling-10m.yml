@@ -24,6 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Checkout vehicle-sdi-system (wheel model source)
+        uses: actions/checkout@v5
+        with:
+          repository: riorus94/vehicle-sdi-system
+          path: vehicle-sdi-system
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -40,6 +46,7 @@ jobs:
           python scripts/suggest_keypoints.py \
             --image-dir dataset_raw/images/train/side \
             --output yolo_training/side_view_dataset/labelme_json_stanford_screening \
+            --model-path vehicle-sdi-system/cv_service/models/wheel_bbox.pt \
             --priority-config config/agent1_keypoint_priority_5kp_no_roof_apex.json \
             --phase-only phase1 \
             --overwrite

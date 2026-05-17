@@ -14,6 +14,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
@@ -51,7 +52,9 @@ BATCH_DIR = YOLO_TRAINING_DIR / "side_view_dataset" / "annotation_batches"
 LABELME_JSON_DIR = YOLO_TRAINING_DIR / "side_view_dataset" / "labelme_json"
 PRIORS_FILE = YOLO_TRAINING_DIR / "side_view_dataset" / "keypoint_priors.json"
 VEHICLE_SDI_ROOT = SDI_HELPER_ROOT.parent / "vehicle-sdi-system"
+VEHICLE_SDI_ROOT_IN_WORKSPACE = SDI_HELPER_ROOT / "vehicle-sdi-system"
 WHEEL_MODEL_PATH = VEHICLE_SDI_ROOT / "cv_service" / "models" / "wheel_bbox.pt"
+WHEEL_MODEL_PATH_IN_WORKSPACE = VEHICLE_SDI_ROOT_IN_WORKSPACE / "cv_service" / "models" / "wheel_bbox.pt"
 WHEELBOX_BEST_MODEL_PATH = YOLO_TRAINING_DIR / "runs" / "roboflow_v3_local" / "weights" / "best.pt"
 AGENT1_PRIORITY_CONFIG_FILE = SDI_HELPER_ROOT / "config" / "agent1_keypoint_priority.json"
 
@@ -141,13 +144,14 @@ class KeypointSuggester:
         priority_config: Optional[PriorityConfig] = None,
     ):
         """Initialize the suggester with Phase 1 wheel model."""
+        expected_paths = self._candidate_model_paths()
         if model_path is None:
-            model_path = self._resolve_default_model_path()
+            model_path = self._resolve_default_model_path(expected_paths)
         
         if not model_path.exists():
             raise FileNotFoundError(
                 f"Wheel model not found: {model_path}\n"
-                f"Expected one of: {WHEELBOX_BEST_MODEL_PATH} or {WHEEL_MODEL_PATH}"
+                f"Expected one of: {', '.join(str(p) for p in expected_paths)}"
             )
         
         logger.info(f"Loading Phase 1 wheel model: {model_path}")
@@ -161,11 +165,31 @@ class KeypointSuggester:
         )
 
     @staticmethod
-    def _resolve_default_model_path() -> Path:
-        """Prefer current local wheelbox best.pt, fallback to vehicle-sdi-system model."""
-        if WHEELBOX_BEST_MODEL_PATH.exists():
-            return WHEELBOX_BEST_MODEL_PATH
-        return WHEEL_MODEL_PATH
+    def _candidate_model_paths() -> List[Path]:
+        """Return ordered wheel model candidates across local and CI layouts."""
+        candidates: List[Path] = []
+
+        env_path = os.getenv("WHEEL_MODEL_PATH", "").strip()
+        if env_path:
+            candidates.append(Path(env_path))
+
+        candidates.extend(
+            [
+                WHEELBOX_BEST_MODEL_PATH,
+                WHEEL_MODEL_PATH,
+                WHEEL_MODEL_PATH_IN_WORKSPACE,
+            ]
+        )
+        return candidates
+
+    @classmethod
+    def _resolve_default_model_path(cls, candidates: Optional[List[Path]] = None) -> Path:
+        """Pick first existing wheel model; default to first candidate for clear errors."""
+        paths = candidates or cls._candidate_model_paths()
+        for path in paths:
+            if path.exists():
+                return path
+        return paths[0]
     
     def suggest_batch(
         self,
