@@ -1,0 +1,50 @@
+name: Validation Readiness Notebook Cron
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdi-helper-validation-readiness-notebook
+  cancel-in-progress: false
+
+jobs:
+  run-notebook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install notebook dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas matplotlib jupyter nbconvert
+
+      - name: Execute notebook
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute notebooks/validation_readiness_test_suite.ipynb \
+            --output validation_readiness_test_suite.executed.ipynb \
+            --ExecutePreprocessor.timeout=600
+
+      - name: Upload executed notebook artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-readiness-notebook-${{ github.run_number }}
+          path: |
+            validation_readiness_test_suite.executed.ipynb
+          if-no-files-found: error
