@@ -166,6 +166,7 @@ def _decide(
     existing_label_stems: set[str],
     limit: int,
     min_long_edge: int,
+    required_stem_prefix: str,
 ) -> tuple[list[Decision], list[Decision]]:
     selected: list[Decision] = []
     rejected: list[Decision] = []
@@ -184,6 +185,8 @@ def _decide(
 
         if stem in exception_stems or stem_key in {s.lower() for s in exception_stems}:
             decision.reason = "scrape_exception_stem"
+        elif required_stem_prefix and not stem.startswith(required_stem_prefix):
+            decision.reason = "wrong_source_prefix"
         elif stem in rejected_stems or stem_key in {s.lower() for s in rejected_stems}:
             decision.reason = "known_rejected_non_side"
         elif stem in existing_label_stems or stem_key in {s.lower() for s in existing_label_stems}:
@@ -259,6 +262,7 @@ def _write_summary(output_root: Path, selected: list[Decision], rejected: list[D
         "source_roots": [str(p) for p in args.source_roots],
         "reject_roots": [str(p) for p in args.reject_roots],
         "existing_label_roots": [str(p) for p in args.existing_label_roots],
+        "required_stem_prefix": args.required_stem_prefix,
         "exceptions": str(args.exceptions),
         "manual_review_notes": [
             "Filename/stem checks catch known front/three-quarter anomalies but do not replace visual review.",
@@ -284,6 +288,11 @@ def main() -> int:
         help="Existing LabelMe JSON roots to skip so staged images expand the dataset",
     )
     parser.add_argument("--no-copy", action="store_true", help="Write manifests only")
+    parser.add_argument(
+        "--required-stem-prefix",
+        default="",
+        help="Optional required image stem prefix, e.g. stanford_",
+    )
     args = parser.parse_args()
 
     repo_root = Path.cwd()
@@ -307,6 +316,7 @@ def main() -> int:
         existing_label_stems,
         args.limit,
         args.min_long_edge,
+        args.required_stem_prefix,
     )
 
     args.output_root.mkdir(parents=True, exist_ok=True)

@@ -7,6 +7,16 @@ Agent 1 labeling and human review.
 .\.venv\Scripts\python.exe scripts\stage_side_pose_candidates.py
 ```
 
+For the Stanford-only mapper workflow, prefer:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\stage_side_pose_candidates.py `
+  --source-roots dataset_raw\images\train\side `
+  --output-root yolo_training\side_view_dataset\subsets\stanford_side_clean `
+  --required-stem-prefix stanford_ `
+  --limit 300
+```
+
 The script writes:
 
 - `yolo_training/side_view_dataset/subsets/pose_candidates_300/images/`

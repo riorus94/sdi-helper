@@ -1,0 +1,60 @@
+dataset_source:
+  name: stanford
+  allowed_stem_prefixes:
+    - stanford_
+  allowed_source_roots:
+    - dataset_raw/images/train/side
+  blocked_external_sources: true
+
+views:
+  side:
+    clean_subset: yolo_training/side_view_dataset/subsets/stanford_side_clean
+    candidate_limit: 300
+    agent1_priority_config: config/agent1_keypoint_priority_9kp_side.json
+    required_agent1_flags:
+      - --phase-only=phase1
+      - --reject-non-side
+    optional_agent1_flags:
+      - --orientation-classifier=clip
+    label_output: yolo_training/side_view_dataset/subsets/stanford_side_clean/labelme_json_9kp
+    quality_report: yolo_training/side_view_dataset/subsets/stanford_side_clean/agent1_quality_report.csv
+  front:
+    clean_subset: yolo_training/front_view_dataset/subsets/stanford_front_clean
+    status: planned
+    labeling_agent: agent_1_front_keypoint_suggester
+    validation_agent: agent_2_front_view_validator
+  rear:
+    clean_subset: yolo_training/rear_view_dataset/subsets/stanford_rear_clean
+    status: planned
+    labeling_agent: agent_1_rear_keypoint_suggester
+    validation_agent: agent_2_rear_view_validator
+
+agents:
+  agent_1:
+    role: keypoint_suggester
+    responsibility:
+      - generate LabelMe pre-labels only after Agent 2 view acceptance
+      - derive geometric points such as ground_ref from wheel anchors
+      - emit confidence metadata and quality report rows
+    must_not:
+      - accept non-Stanford sources
+      - train models
+      - silently promote rejected_non_side_view samples
+  agent_2:
+    role: view_and_geometry_validator
+    responsibility:
+      - classify and validate side/front/rear view eligibility
+      - reject non-side, front/rear/three-quarter, top, interior, corrupt, duplicate images
+      - validate keypoint geometry after Agent 1
+    must_not:
+      - generate training labels without Agent 1 metadata
+  agent_3:
+    role: dataset_mapper_orchestrator
+    responsibility:
+      - read this mapper config
+      - stage clean Stanford-only subsets
+      - call Agent 1 and Agent 2 in order
+      - write manifests, rejections, summaries, and handoff notes
+    must_not:
+      - mix 5KP, 9KP, and 19KP labels in one training directory
+      - include samples outside mapper-approved source roots
