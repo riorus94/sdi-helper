@@ -96,8 +96,26 @@ jobs:
             --img-dir dataset_raw/images/train/side \
             --keypoints ground_ref,front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground
 
-      - name: Run pose training
+      - name: Check generated pose labels
+        id: pose_labels
         if: ${{ steps.pose_input.outputs.should_train == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          labels_dir="yolo_training/side_view_dataset/labels_pose_5kp_no_roof"
+          label_count=$(find "$labels_dir" -maxdepth 1 -type f -name '*.txt' 2>/dev/null | wc -l || true)
+          echo "label_count=$label_count" >> "$GITHUB_OUTPUT"
+
+          if [ "$label_count" -gt 0 ]; then
+            echo "has_labels=true" >> "$GITHUB_OUTPUT"
+            echo "Pose labels ready: $label_count files"
+          else
+            echo "has_labels=false" >> "$GITHUB_OUTPUT"
+            echo "No pose label txt files generated in $labels_dir. Skipping training for this run."
+          fi
+
+      - name: Run pose training
+        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels == 'true' }}
         run: |
           python yolo_training/train_pose.py
 
@@ -105,6 +123,11 @@ jobs:
         if: ${{ steps.pose_input.outputs.should_train != 'true' }}
         run: |
           echo "Pose training skipped due to empty annotation JSON sources."
+
+      - name: Skip note (no converted pose labels)
+        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels != 'true' }}
+        run: |
+          echo "Pose training skipped because conversion produced zero pose label txt files."
 
       - name: Upload training artifacts
         if: always()
@@ -186,8 +209,26 @@ jobs:
             --img-dir dataset_raw/images/train/side \
             --keypoints ground_ref,front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground
 
-      - name: Run pose training
+      - name: Check generated pose labels
+        id: pose_labels
         if: ${{ steps.pose_input.outputs.should_train == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          labels_dir="yolo_training/side_view_dataset/labels_pose_5kp_no_roof"
+          label_count=$(find "$labels_dir" -maxdepth 1 -type f -name '*.txt' 2>/dev/null | wc -l || true)
+          echo "label_count=$label_count" >> "$GITHUB_OUTPUT"
+
+          if [ "$label_count" -gt 0 ]; then
+            echo "has_labels=true" >> "$GITHUB_OUTPUT"
+            echo "Pose labels ready: $label_count files"
+          else
+            echo "has_labels=false" >> "$GITHUB_OUTPUT"
+            echo "No pose label txt files generated in $labels_dir. Skipping training for this run."
+          fi
+
+      - name: Run pose training
+        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels == 'true' }}
         run: |
           python yolo_training/train_pose.py
 
@@ -195,6 +236,11 @@ jobs:
         if: ${{ steps.pose_input.outputs.should_train != 'true' }}
         run: |
           echo "Pose training skipped due to empty annotation JSON sources."
+
+      - name: Skip note (no converted pose labels)
+        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels != 'true' }}
+        run: |
+          echo "Pose training skipped because conversion produced zero pose label txt files."
 
       - name: Upload training artifacts
         if: always()
