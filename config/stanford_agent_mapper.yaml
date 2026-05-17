@@ -13,9 +13,12 @@ views:
     agent1_priority_config: config/agent1_keypoint_priority_9kp_side.json
     required_agent1_flags:
       - --phase-only=phase1
-      - --reject-non-side
-    optional_agent1_flags:
       - --orientation-classifier=clip
+      - --reject-non-side
+    optional_agent1_flags: []
+    mandatory_labeling_gates:
+      - --orientation-classifier=clip is required for front/rear wheel assignment
+      - --reject-non-side is required before writing training-bound JSON
     label_output: yolo_training/side_view_dataset/subsets/stanford_side_clean/labelme_json_9kp
     quality_report: yolo_training/side_view_dataset/subsets/stanford_side_clean/agent1_quality_report.csv
   front:

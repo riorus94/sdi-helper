@@ -35,6 +35,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-clip-vit-base-patch32-${{ runner.os }}
+          restore-keys: |
+            huggingface-clip-vit-base-patch32-
+
       - name: Detect wheel model path
         id: wheel_model
         shell: bash
@@ -61,6 +69,9 @@ jobs:
             --model-path "${{ steps.wheel_model.outputs.model_path }}" \
             --priority-config config/agent1_keypoint_priority_5kp_no_roof_apex.json \
             --phase-only phase1 \
+            --orientation-classifier clip \
+            --reject-non-side \
+            --quality-report logs/agent1_quality_report.csv \
             --overwrite
 
       - name: Skip note (no wheel model)

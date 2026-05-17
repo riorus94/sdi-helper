@@ -179,6 +179,12 @@ class ClipOrientationClassifier:
                 self._flat_texts.append(prompt)
                 self._owner_idx.append(idx)
 
+    def warmup(self) -> None:
+        """Load CLIP once so setup failures happen before JSON output."""
+        from sdi_helper.infrastructure.models._clip_loader import get_clip
+
+        get_clip(self.model_name)
+
     def classify(self, image: np.ndarray) -> OrientationPrediction:
         from sdi_helper.infrastructure.models._clip_loader import clip_text_scores
 
@@ -254,6 +260,7 @@ class KeypointSuggester:
         priority_config: Optional[PriorityConfig] = None,
         orientation_classifier: Optional[ClipOrientationClassifier] = None,
         side_view_gate: Optional[SideViewGate] = None,
+        clip_missing_experimental: bool = False,
     ):
         """Initialize the suggester with Phase 1 wheel model."""
         expected_paths = self._candidate_model_paths()
@@ -277,6 +284,7 @@ class KeypointSuggester:
         )
         self.orientation_classifier = orientation_classifier
         self.side_view_gate = side_view_gate
+        self.clip_missing_experimental = clip_missing_experimental
 
     @staticmethod
     def _candidate_model_paths() -> List[Path]:
@@ -413,7 +421,7 @@ class KeypointSuggester:
             if image is None:
                 raise ValueError(f"Failed to read image: {image_path}")
             
-            validation_prefix: List[str] = []
+            validation_prefix = self._initial_validation_warnings()
             orientation_prediction = None
             if self.orientation_classifier is not None:
                 orientation_prediction = self.orientation_classifier.classify(image)
@@ -551,6 +559,11 @@ class KeypointSuggester:
                 out_of_frame_count=0,
                 error=str(e),
             )
+
+    def _initial_validation_warnings(self) -> List[str]:
+        if not self.clip_missing_experimental:
+            return []
+        return ["orientation_clip_missing: experimental run not valid for training"]
 
     @staticmethod
     def _assess_quality(
@@ -1146,6 +1159,51 @@ def _write_wheelbox_report(results: List[WheelboxPrelabelResult], report_path: P
             )
 
 
+def _is_keypoint_labeling_mode(args: argparse.Namespace) -> bool:
+    """Return true for modes that can write LabelMe keypoint JSON."""
+    return (
+        not args.wheelbox_prelabel
+        and not args.learn_priors_from
+        and (args.batch is not None or args.image_dir is not None)
+    )
+
+
+def _validate_clip_requirement(args: argparse.Namespace) -> Optional[str]:
+    if not _is_keypoint_labeling_mode(args):
+        return None
+    if args.orientation_classifier == "clip":
+        return None
+    if args.allow_no_clip_experimental:
+        return None
+    return (
+        "ERROR: Agent 1 keypoint labeling requires --orientation-classifier clip. "
+        "Use --allow-no-clip-experimental only for throwaway experiments; "
+        "experimental output is not valid for training."
+    )
+
+
+def _setup_clip_classifier(args: argparse.Namespace) -> Optional[ClipOrientationClassifier]:
+    if args.orientation_classifier != "clip":
+        return None
+
+    classifier = ClipOrientationClassifier(
+        min_confidence=args.orientation_min_confidence,
+        min_margin=args.orientation_min_margin,
+    )
+    try:
+        classifier.warmup()
+    except Exception as exc:
+        print(
+            "ERROR: Agent 1 keypoint labeling requires CLIP orientation, but CLIP "
+            "could not be loaded before output generation. Ensure "
+            "openai/clip-vit-base-patch32 is available in the local cache or enable "
+            f"model download, then retry. Setup error: {exc}",
+            file=sys.stderr,
+        )
+        exit(2)
+    return classifier
+
+
 def main():
     """CLI entry point for keypoint suggestion."""
     
@@ -1271,7 +1329,12 @@ def main():
         "--orientation-classifier",
         choices=("none", "clip"),
         default="none",
-        help="Optional side-heading classifier before front/rear wheel assignment",
+        help="Side-heading classifier before front/rear wheel assignment; required for keypoint JSON labeling",
+    )
+    parser.add_argument(
+        "--allow-no-clip-experimental",
+        action="store_true",
+        help="Emergency bypass for non-training experiments; marks reports invalid for training",
     )
     parser.add_argument(
         "--orientation-min-confidence",
@@ -1304,6 +1367,11 @@ def main():
     )
     
     args = parser.parse_args()
+
+    clip_error = _validate_clip_requirement(args)
+    if clip_error is not None:
+        print(clip_error, file=sys.stderr)
+        exit(2)
     
     if args.learn_priors_from:
         priors = learn_priors_from_labelme(
@@ -1317,12 +1385,7 @@ def main():
 
     priors = _load_priors(args.priors_file)
     priority_config = _load_priority_config(args.priority_config)
-    orientation_classifier = None
-    if args.orientation_classifier == "clip":
-        orientation_classifier = ClipOrientationClassifier(
-            min_confidence=args.orientation_min_confidence,
-            min_margin=args.orientation_min_margin,
-        )
+    orientation_classifier = _setup_clip_classifier(args)
     side_view_gate = None
     if args.reject_non_side:
         side_view_gate = SideViewGate(
@@ -1338,6 +1401,11 @@ def main():
             priority_config=priority_config,
             orientation_classifier=orientation_classifier,
             side_view_gate=side_view_gate,
+            clip_missing_experimental=(
+                _is_keypoint_labeling_mode(args)
+                and args.allow_no_clip_experimental
+                and args.orientation_classifier != "clip"
+            ),
         )
     except FileNotFoundError as e:
         logger.error(str(e))

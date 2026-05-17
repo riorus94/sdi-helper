@@ -160,8 +160,10 @@ Run Agent 1 for 9KP side labels:
   --overwrite
 ```
 
-If CLIP is unavailable offline, omit `--orientation-classifier clip`; then
-left-looking samples require manual front/rear review.
+CLIP orientation is mandatory for Agent 1 side-view keypoint labeling. If CLIP
+cannot load or download, stop and fix CLIP setup before generating LabelMe JSON.
+The emergency `--allow-no-clip-experimental` bypass is for non-training
+experiments only and must never be promoted into a training label directory.
 
 ## Front And Rear Workflow
 

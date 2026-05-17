@@ -35,7 +35,8 @@ Selection rules:
 - reject corrupt or too-small images
 - copy only image files with supported extensions
 
-After staging, run Agent 1 with non-side rejection:
+After staging, run Agent 1 with CLIP orientation and non-side rejection. Both
+flags are mandatory for training-bound side-view keypoint JSON:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\suggest_keypoints.py `
@@ -51,3 +52,8 @@ After staging, run Agent 1 with non-side rejection:
 
 Review `REVIEW_HIGH` and any `rejected_non_side_view` rows before using labels
 for pose training.
+
+If CLIP cannot load or download, stop and fix setup first. The
+`--allow-no-clip-experimental` bypass is only for throwaway experiments; reports
+from that mode are marked `orientation_clip_missing: experimental run not valid
+for training`.

@@ -60,17 +60,12 @@ jobs:
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
-          fallback="yolo_training/side_view_dataset/labelme_json"
 
           primary_count=$(find "$primary" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
-          fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
-          elif [ "${fallback_count}" -gt 0 ]; then
-            selected="$fallback"
-            selected_count="$fallback_count"
           else
             selected=""
             selected_count="0"
@@ -84,7 +79,7 @@ jobs:
             echo "Using LabelMe JSON source: $selected ($selected_count files)"
           else
             echo "should_train=false" >> "$GITHUB_OUTPUT"
-            echo "No LabelMe JSON files found in either $primary or $fallback. Skipping pose training for this run."
+            echo "No CLIP-gated Stanford screening JSON files found in $primary. Skipping pose training for this run."
           fi
 
       - name: Build 5KP YOLO pose labels from LabelMe JSON
@@ -173,17 +168,12 @@ jobs:
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
-          fallback="yolo_training/side_view_dataset/labelme_json"
 
           primary_count=$(find "$primary" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
-          fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
-          elif [ "${fallback_count}" -gt 0 ]; then
-            selected="$fallback"
-            selected_count="$fallback_count"
           else
             selected=""
             selected_count="0"
@@ -197,7 +187,7 @@ jobs:
             echo "Using LabelMe JSON source: $selected ($selected_count files)"
           else
             echo "should_train=false" >> "$GITHUB_OUTPUT"
-            echo "No LabelMe JSON files found in either $primary or $fallback. Skipping pose training for this run."
+            echo "No CLIP-gated Stanford screening JSON files found in $primary. Skipping pose training for this run."
           fi
 
       - name: Build 5KP YOLO pose labels from LabelMe JSON

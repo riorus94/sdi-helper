@@ -83,13 +83,18 @@ For 9KP side labels, run:
   --overwrite
 ```
 
-If CLIP is unavailable offline, rerun without `--orientation-classifier clip`.
-This is acceptable for triage, but left-looking/right-looking front/rear labels
-must receive extra human review before training.
+CLIP orientation is mandatory for Agent 1 keypoint LabelMe generation. If CLIP
+cannot load or download, fix the CLIP setup first; do not generate training
+labels without it.
 
 The `--reject-non-side` flag is mandatory. Images rejected with
 `rejected_non_side_view` must not be used for pose training unless a human
 explicitly promotes them.
+
+The only approved bypass is `--allow-no-clip-experimental`, and only for
+throwaway experiments. Any report from that mode must include
+`orientation_clip_missing: experimental run not valid for training`; those JSONs
+must not be promoted to training.
 
 ## Orientation Rules
 
@@ -100,8 +105,9 @@ Label names are semantic, not screen-position shortcuts.
 - left-looking vehicle:
   - `front_wheel_*` is left of `rear_wheel_*`
 
-Agent 1 may use CLIP orientation to assign front/rear. If CLIP is not used,
-reviewers must correct left-looking samples manually.
+Agent 1 must use CLIP orientation to assign front/rear before writing keypoint
+JSON. Runs without CLIP should fail loudly unless the experimental bypass is
+explicitly requested.
 
 Horizontal flip augmentation requires front/rear swap. `train_pose.py` now
 computes `flip_idx` from keypoint names. Do not hand-edit dataset YAML to an
