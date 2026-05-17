@@ -1,0 +1,144 @@
+filename,suggested_label,final_label,side_view_score,source,query,preselect_notes,width,height
+car_side_profile__000010.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.90,1328,700
+car_side_profile_isolated__000027.jpg,side_view_valid,,1.0,raw,car side profile isolated,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+car_side_view_white_background__000017.jpg,side_view_valid,,1.0,raw,car side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:2.41,1920,798
+car_side_view_white_background__000040.jpg,side_view_valid,,1.0,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.95,800,411
+car_side_view_white_background__000045.jpg,side_view_valid,,1.0,raw,suv side view press release,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.69,1184,700
+sedan_side_profile_studio_shot__000004.jpg,side_view_valid,,1.0,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_profile_studio_shot__000009.jpg,side_view_valid,,1.0,raw,suv side view press release,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_profile_studio_shot__000033.jpg,side_view_valid,,1.0,raw,sedan side view press release,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_profile_studio_shot__000035.jpg,side_view_valid,,1.0,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_profile_studio_shot__000037.jpg,side_view_valid,,1.0,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_profile_studio_shot__000041.jpg,side_view_valid,,1.0,raw,suv side view press release,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_view_white_background__000003.jpg,side_view_valid,,1.0,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.82,800,440
+sedan_side_view_white_background__000023.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+sedan_side_view_white_background__000026.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.73,800,462
+sedan_side_view_white_background__000030.jpg,side_view_valid,,1.0,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:2.25,1000,444
+sedan_side_view_white_background__000040.jpg,side_view_valid,,1.0,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.50,800,532
+side_profile_car_review__000010.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.78,1244,700
+side_profile_car_review__000012.jpg,side_view_valid,,1.0,raw,car side profile isolated,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:2.10,1470,700
+suv_side_profile_studio_shot__000005.jpg,side_view_valid,,1.0,raw,toyota camry side view,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000006.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000008.jpg,side_view_valid,,1.0,raw,suv side view configurator,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000010.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000018.jpg,side_view_valid,,1.0,raw,car side view showroom,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000020.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.38,1600,1157
+suv_side_profile_studio_shot__000023.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000025.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:2.09,800,383
+suv_side_profile_studio_shot__000026.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_profile_studio_shot__000029.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+suv_side_view__000004.jpg,side_view_valid,,1.0,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.60,1300,814
+suv_side_view__000006.jpg,side_view_valid,,1.0,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50,1000,667
+suv_side_view_white_background__000001.jpg,side_view_valid,,1.0,raw,suv side view press release,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.78,800,449
+suv_side_view_white_background__000007.jpg,side_view_valid,,1.0,raw,suv side view press release,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.59,800,502
+suv_side_view_white_background__000018.jpg,side_view_valid,,1.0,raw,car side view showroom,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:1.33,800,600
+suv_side_view_white_background__000021.jpg,side_view_valid,,1.0,raw,car side profile isolated,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.82,736,405
+suv_side_view_white_background__000038.jpg,side_view_valid,,1.0,raw,suv side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.72,800,464
+suv_side_view_white_background__000042.jpg,side_view_valid,,1.0,raw,suv side view white background,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.33,800,603
+car_side_profile__000009.jpg,side_view_valid,,0.9,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.73,1214,700
+car_side_view__000001.jpg,side_view_valid,,0.9,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.54,1300,844
+car_side_view__000005.jpg,side_view_valid,,0.9,raw,toyota camry side view,query_has_side_view; dir_has_side_view; good_aspect:1.40,1023,729
+car_side_view_press_photo__000045.jpg,side_view_valid,,0.9,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.62,800,493
+sedan_side_view__000002.jpg,side_view_valid,,0.9,raw,sedan side view,query_has_side_view; dir_has_side_view; good_aspect:1.72,1300,758
+sedan_side_view__000014.jpg,side_view_valid,,0.9,raw,sedan side view,query_has_side_view; dir_has_side_view; good_aspect:1.43,800,560
+sedan_side_view_configurator__000058.jpg,side_view_valid,,0.9,raw,sedan side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.43,800,559
+sedan_side_view_press_release__000032.jpg,side_view_valid,,0.9,raw,sedan side view press release,query_has_side_view; dir_has_side_view; good_aspect:2.04,4005,1960
+side_profile_car_review__000008.jpg,side_view_valid,,0.9,raw,suv side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.78,1244,700
+side_view_car_review__000016.jpg,side_view_valid,,0.9,raw,side view car review,query_has_side_view; dir_has_side_view; good_aspect:1.72,858,500
+suv_side_view__000008.jpg,side_view_valid,,0.9,raw,suv side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.76,3453,1960
+suv_side_view__000011.jpg,side_view_valid,,0.9,raw,suv side view,query_has_side_view; dir_has_side_view; good_aspect:1.33,2613,1960
+suv_side_view_configurator__000008.jpg,side_view_valid,,0.9,raw,suv side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.76,3453,1960
+suv_side_view_press_release__000001.jpg,side_view_valid,,0.9,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.84,1804,980
+suv_side_view_press_release__000046.jpg,side_view_valid,,0.9,raw,sedan side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.78,1280,720
+car_side_profile_isolated__000021.jpg,side_view_valid,,0.85,raw,car side profile isolated,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:1.43; CROP_edge_touch,1000,700
+car_side_view__000015.jpg,side_view_valid,,0.8,raw,suv side view press release,query_has_side_view; dir_has_side_view,1920,698
+car_side_profile__000006.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.56; CROP_edge_touch,1094,700
+car_side_view__000003.jpg,side_view_valid,,0.75,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.81; CROP_edge_touch,1000,554
+car_side_view__000004.jpg,side_view_valid,,0.75,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; CROP_edge_touch,1280,854
+car_side_view__000006.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.60; CROP_edge_touch,2560,1600
+car_side_view__000012.jpg,side_view_valid,,0.75,raw,car side profile isolated,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.36; CROP_edge_touch,1500,1101
+car_side_view__000013.jpg,side_view_valid,,0.75,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.36; CROP_edge_touch,1500,1101
+sedan_side_view__000006.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.78; CROP_edge_touch,800,450
+sedan_side_view__000010.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; CROP_edge_touch,800,533
+sedan_side_view_white_background__000005.jpg,side_view_valid,,0.75,raw,toyota camry side view,query_has_side_view; dir_has_side_view; dir_studio_indicator; good_aspect:2.08; CROP_edge_touch,800,384
+side_profile_car_review__000004.jpg,side_view_valid,,0.75,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; CROP_edge_touch,1050,700
+side_profile_car_review__000006.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.78; CROP_edge_touch,1245,700
+side_profile_car_review__000017.jpg,side_view_valid,,0.75,raw,car side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.75; CROP_edge_touch,1225,700
+side_profile_car_review__000020.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; CROP_edge_touch,1050,700
+suv_side_view__000020.jpg,side_view_valid,,0.75,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; CROP_edge_touch,1920,1280
+suv_side_view_brochure__000013.jpg,side_view_valid,,0.75,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.52; CROP_edge_touch,800,528
+sedan_side_view_white_background__000029.jpg,side_view_valid,,0.7,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; dir_studio_indicator; good_aspect:2.50; ILLUST_uc128:1925,800,320
+car_side_profile__000002.jpeg,side_view_invalid,,0.65,raw,car side profile,query_has_side_view; dir_has_side_view; good_aspect:1.78; CROP_edge_touch,4912,2760
+car_side_profile__000005.jpg,side_view_invalid,,0.65,raw,toyota camry side view,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,1050,700
+car_side_profile__000013.jpg,side_view_invalid,,0.65,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.94; GRAYSCALE_uc128:254; CROP_edge_touch,1360,700
+car_side_profile__000018.jpeg,side_view_invalid,,0.65,raw,car side profile,query_has_side_view; dir_has_side_view; good_aspect:1.78; CROP_edge_touch,6000,3376
+car_side_profile__000019.jpeg,side_view_invalid,,0.65,raw,car side profile,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,5908,3939
+car_side_view__000008.jpg,side_view_invalid,,0.65,raw,suv side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.60; CROP_edge_touch,2560,1600
+car_side_view__000014.jpeg,side_view_invalid,,0.65,raw,car side view,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,6000,4000
+car_side_view__000018.jpg,side_view_invalid,,0.65,raw,car side view showroom,query_has_side_view; dir_has_side_view; good_aspect:1.36; CROP_edge_touch,1300,956
+car_side_view_showroom__000018.jpg,side_view_invalid,,0.65,raw,car side view showroom,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,800,534
+sedan_side_view__000007.jpg,side_view_invalid,,0.65,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,800,533
+sedan_side_view_brochure__000002.jpg,side_view_invalid,,0.65,raw,sedan side view brochure,query_has_side_view; dir_has_side_view; good_aspect:1.31; CROP_edge_touch,1600,1221
+sedan_side_view_brochure__000007.jpg,side_view_invalid,,0.65,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,800,533
+sedan_side_view_brochure__000018.jpg,side_view_invalid,,0.65,raw,car side view showroom,query_has_side_view; dir_has_side_view; good_aspect:1.38; CROP_edge_touch,1600,1156
+sedan_side_view_configurator__000034.jpg,side_view_invalid,,0.65,raw,sedan side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.62; CROP_edge_touch,1600,989
+sedan_side_view_configurator__000046.jpg,side_view_invalid,,0.65,raw,sedan side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.75; CROP_edge_touch,800,457
+sedan_side_view_press_release__000028.jpg,side_view_invalid,,0.65,raw,sedan side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.78; CROP_edge_touch,800,450
+sedan_side_view_press_release__000033.jpg,side_view_invalid,,0.65,raw,sedan side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.78; CROP_edge_touch,800,449
+side_profile_car_review__000007.jpg,side_view_invalid,,0.65,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.78; CROP_edge_touch,1249,700
+side_view_car_review__000008.jpg,side_view_invalid,,0.65,raw,suv side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.75; CROP_edge_touch,1344,768
+suv_side_view__000009.jpg,side_view_invalid,,0.65,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.43; CROP_edge_touch,1600,1119
+suv_side_view_configurator__000044.jpg,side_view_invalid,,0.65,raw,suv side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,800,533
+suv_side_view_press_release__000022.jpg,side_view_invalid,,0.65,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.38; CROP_edge_touch,1600,1157
+suv_side_view_press_release__000041.jpg,side_view_invalid,,0.65,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,800,533
+toyota_camry_side_view__000005.jpg,side_view_invalid,,0.65,raw,toyota camry side view,query_has_side_view; dir_has_side_view; good_aspect:1.50; CROP_edge_touch,930,620
+car_side_view__000010.jpg,side_view_invalid,,0.6,raw,suv side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.56; ILLUST_uc128:1381,1600,1023
+car_side_view__000017.jpg,side_view_invalid,,0.6,raw,car side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.33; ILLUST_uc128:1620,1024,768
+sedan_side_view__000004.jpg,side_view_invalid,,0.6,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; ILLUST_uc128:1680,1500,1000
+side_view_car_review__000017.jpg,side_view_invalid,,0.6,raw,car side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.33; ILLUST_uc128:1976,1307,980
+suv_side_view__000012.jpg,side_view_invalid,,0.6,raw,car side profile isolated,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.33; ILLUST_uc128:871,2613,1960
+suv_side_view_street__000013.jpg,side_view_invalid,,0.6,raw,sedan side view white background,query_has_side_view; dir_has_side_view; street_scene; studio_indicator; good_aspect:1.38; CROP_edge_touch,1600,1157
+suv_side_view_street__000017.jpg,side_view_invalid,,0.6,raw,car side view white background,query_has_side_view; dir_has_side_view; street_scene; studio_indicator; good_aspect:1.39; CROP_edge_touch,1600,1151
+car_side_profile__000020.jpeg,side_view_invalid,,0.55,raw,car side profile,query_has_side_view; dir_has_side_view; good_aspect:1.50; VERY_DARK_bg:8,5806,3871
+side_profile_car_review__000005.jpg,side_view_invalid,,0.55,raw,toyota camry side view,query_has_side_view; dir_has_side_view; good_aspect:1.50; GRAYSCALE_uc128:256; CROP_edge_touch,1050,700
+car_side_profile__000015.jpg,side_view_invalid,,0.5,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.53; ILLUST_uc128:431,1070,700
+car_side_view__000007.jpg,side_view_invalid,,0.5,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.83; ILLUST_uc128:339,1283,700
+car_side_view_press_photo__000034.jpg,side_view_invalid,,0.5,raw,sedan side view configurator,query_has_side_view; dir_has_side_view; good_aspect:1.78; ILLUST_uc128:1965,1742,980
+sedan_side_view__000001.jpg,side_view_invalid,,0.5,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.40; ILLUST_uc128:1943,1600,1140
+sedan_side_view__000011.jpg,side_view_invalid,,0.5,raw,sedan side view,query_has_side_view; dir_has_side_view; good_aspect:1.60; ILLUST_uc128:864,800,500
+sedan_side_view_street__000007.jpg,side_view_invalid,,0.5,raw,suv side view press release,query_has_side_view; dir_has_side_view; street_scene; good_aspect:1.38; CROP_edge_touch,1600,1157
+sedan_side_view_street__000008.jpg,side_view_invalid,,0.5,raw,suv side view configurator,query_has_side_view; dir_has_side_view; street_scene; good_aspect:1.50; CROP_edge_touch,800,533
+side_view_car_review__000019.jpg,side_view_invalid,,0.5,raw,side view car review,query_has_side_view; dir_has_side_view; good_aspect:1.71; ILLUST_uc128:1840,1200,700
+suv_side_view__000001.jpg,side_view_invalid,,0.5,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:2.13; ILLUST_uc128:326,766,360
+suv_side_view_brochure__000005.jpg,side_view_invalid,,0.5,raw,toyota camry side view,query_has_side_view; dir_has_side_view; good_aspect:1.99; ILLUST_uc128:1037,993,500
+suv_side_view_street__000014.jpg,side_view_invalid,,0.5,raw,suv side view street,query_has_side_view; dir_has_side_view; street_scene; good_aspect:1.62; CROP_edge_touch,1600,987
+suv_side_view_street__000019.jpg,side_view_invalid,,0.5,raw,suv side view street,query_has_side_view; dir_has_side_view; street_scene; good_aspect:1.38; CROP_edge_touch,1600,1157
+side_profile_car_review__000013.jpg,side_view_invalid,,0.45,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.50; STREET_bg:49_dr:0.88; CROP_edge_touch,1050,700
+side_view_car_review__000004.jpg,side_view_invalid,,0.45,raw,sedan side profile studio shot,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.78; STREET_bg:71_dr:0.52; CROP_edge_touch,800,449
+suv_side_view_press_release__000015.jpg,side_view_invalid,,0.45,raw,suv side view press release,query_has_side_view; dir_has_side_view; CROP_pano_edge,1038,400
+rejected__car_side_view__000015.jpg,side_view_invalid,,0.4,rejected,car side view,query_has_side_view; previously_rejected,1920,698
+car_side_view__000016.jpg,side_view_invalid,,0.35,raw,car side view,query_has_side_view; dir_has_side_view; good_aspect:2.02; STREET_bg:42_dr:0.78; CROP_edge_touch,1300,643
+side_view_car_review__000007.jpg,side_view_invalid,,0.35,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.36; STREET_bg:53_dr:0.97; CROP_edge_touch,1500,1101
+side_view_car_review__000014.jpg,side_view_invalid,,0.35,raw,side view car review,query_has_side_view; dir_has_side_view; good_aspect:1.78; STREET_bg:77_dr:0.72; CROP_edge_touch,800,450
+car_side_profile__000016.jpeg,side_view_invalid,,0.3,raw,car side profile,query_has_side_view; dir_has_side_view; good_aspect:1.50; VERY_DARK_bg:24; CROP_edge_touch,5806,3871
+car_side_view__000009.jpg,side_view_invalid,,0.25,raw,suv side view press release,query_has_side_view; dir_has_side_view; good_aspect:1.50; ILLUST_uc128:1220; CROP_edge_touch,1920,1277
+car_side_view__000019.jpg,side_view_invalid,,0.25,raw,car side view,query_has_side_view; dir_has_side_view; good_aspect:1.60; ILLUST_uc128:1986; CROP_edge_touch,1600,1000
+sedan_side_view_brochure__000016.jpg,side_view_invalid,,0.25,raw,sedan side view brochure,query_has_side_view; dir_has_side_view; good_aspect:1.36; ILLUST_uc128:541; CROP_edge_touch,1600,1176
+suv_side_view__000013.jpg,side_view_invalid,,0.25,raw,sedan side view white background,query_has_side_view; dir_has_side_view; studio_indicator; good_aspect:1.33; ILLUST_uc128:1342; VERY_DARK_bg:0,800,601
+rejected__car_side_profile__000005.jpg,side_view_invalid,,0.25,rejected,car side profile,query_has_side_view; good_aspect:1.50; CROP_edge_touch; previously_rejected,1050,700
+rejected__car_side_profile__000006.jpg,side_view_invalid,,0.25,rejected,car side profile,query_has_side_view; good_aspect:1.56; CROP_edge_touch; previously_rejected,1094,700
+rejected__car_side_profile__000018.jpeg,side_view_invalid,,0.25,rejected,car side profile,query_has_side_view; good_aspect:1.78; CROP_edge_touch; previously_rejected,6000,3376
+rejected__car_side_view__000013.jpg,side_view_invalid,,0.25,rejected,car side view,query_has_side_view; good_aspect:1.36; CROP_edge_touch; previously_rejected,1500,1101
+rejected__car_side_view__000018.jpg,side_view_invalid,,0.25,rejected,car side view,query_has_side_view; good_aspect:1.36; CROP_edge_touch; previously_rejected,1300,956
+rejected__sedan_side_view__000010.jpg,side_view_invalid,,0.25,rejected,sedan side view,query_has_side_view; good_aspect:1.50; CROP_edge_touch; previously_rejected,800,533
+rejected__side_profile_car_review__000006.jpg,side_view_invalid,,0.25,rejected,side profile car review,query_has_side_view; good_aspect:1.78; CROP_edge_touch; previously_rejected,1245,700
+rejected__side_profile_car_review__000017.jpg,side_view_invalid,,0.25,rejected,side profile car review,query_has_side_view; good_aspect:1.75; CROP_edge_touch; previously_rejected,1225,700
+rejected__side_profile_car_review__000020.jpg,side_view_invalid,,0.25,rejected,side profile car review,query_has_side_view; good_aspect:1.50; CROP_edge_touch; previously_rejected,1050,700
+rejected__car_side_profile__000013.jpg,side_view_invalid,,0.15,rejected,car side profile,query_has_side_view; good_aspect:1.94; GRAYSCALE_uc128:254; CROP_edge_touch; previously_rejected,1360,700
+rejected__car_side_profile__000020.jpeg,side_view_invalid,,0.15,rejected,car side profile,query_has_side_view; good_aspect:1.50; VERY_DARK_bg:8; previously_rejected,5806,3871
+rejected__car_side_profile__000016.jpeg,side_view_invalid,,0.0,rejected,car side profile,query_has_side_view; good_aspect:1.50; VERY_DARK_bg:24; CROP_edge_touch; previously_rejected,5806,3871
+rejected__car_side_view__000009.jpg,side_view_invalid,,0.0,rejected,car side view,query_has_side_view; good_aspect:1.50; ILLUST_uc128:1220; CROP_edge_touch; previously_rejected,1920,1277
+rejected__sedan_side_view__000015.jpg,side_view_invalid,,0.0,rejected,sedan side view,query_has_side_view; good_aspect:1.50; ILLUST_uc128:1915; CROP_edge_touch; previously_rejected,1470,980
+rejected__side_profile_car_review__000013.jpg,side_view_invalid,,0.0,rejected,side profile car review,query_has_side_view; good_aspect:1.50; STREET_bg:49_dr:0.88; CROP_edge_touch; previously_rejected,1050,700
+rejected__side_view_car_review__000007.jpg,side_view_invalid,,0.0,rejected,side view car review,query_has_side_view; good_aspect:1.36; STREET_bg:53_dr:0.97; CROP_edge_touch; previously_rejected,1500,1101
+rejected__side_view_car_review__000014.jpg,side_view_invalid,,0.0,rejected,side view car review,query_has_side_view; good_aspect:1.78; STREET_bg:77_dr:0.72; CROP_edge_touch; previously_rejected,800,450

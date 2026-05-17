@@ -1,0 +1,24 @@
+{
+  "version": "6.2.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "roof_apex",
+      "points": [
+        [
+          128.71100917431193,
+          53.76146788990826
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\..\\..\\dataset_raw\\images\\train\\not_in_side_image_exception\\ce1f241aed934f0097d8ecf0f785ea03.jpg",
+  "imageData": null,
+  "imageHeight": 180,
+  "imageWidth": 251
+}

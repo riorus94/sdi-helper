@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          686.440185546875,
+          368.0548095703125
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.885"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          686.440185546875,
+          417.7082824707031
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.885"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          226.79226684570312,
+          369.6263427734375
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.885"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          226.79226684570312,
+          420.4230041503906
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.885"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          686.440185546875,
+          420.4230041503906
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.911"
+    }
+  ],
+  "imagePath": "000005_toyota_camry_side_view.jpg",
+  "imageData": null,
+  "imageHeight": 620,
+  "imageWidth": 930
+}

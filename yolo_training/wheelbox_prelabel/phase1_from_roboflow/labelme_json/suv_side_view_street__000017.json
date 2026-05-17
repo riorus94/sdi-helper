@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          1152.0,
+          840.23
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.350"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          1152.0,
+          966.8399999999999
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.350"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          480.0,
+          840.23
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.350"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          480.0,
+          966.8399999999999
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.350"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          1152.0,
+          966.8399999999999
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.595"
+    }
+  ],
+  "imagePath": "suv_side_view_street__000017.jpg",
+  "imageData": null,
+  "imageHeight": 1151,
+  "imageWidth": 1600
+}

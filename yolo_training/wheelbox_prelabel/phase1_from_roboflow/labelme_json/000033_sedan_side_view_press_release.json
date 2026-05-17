@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          608.9786376953125,
+          272.2032470703125
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.877"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          608.9786376953125,
+          324.6683044433594
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.877"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          186.95425415039062,
+          272.55120849609375
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.877"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          186.95425415039062,
+          324.55218505859375
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.877"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          608.9786376953124,
+          324.55218505859375
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.911"
+    }
+  ],
+  "imagePath": "000033_sedan_side_view_press_release.jpg",
+  "imageData": null,
+  "imageHeight": 449,
+  "imageWidth": 800
+}

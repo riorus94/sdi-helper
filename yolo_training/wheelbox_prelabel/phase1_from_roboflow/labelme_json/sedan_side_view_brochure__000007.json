@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          659.31396484375,
+          416.83477783203125
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.640"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          659.31396484375,
+          466.1356201171875
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.640"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          124.08622741699219,
+          313.2405090332031
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.640"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          124.08622741699219,
+          375.3078308105469
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.640"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          659.31396484375,
+          375.3078308105469
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.394"
+    }
+  ],
+  "imagePath": "sedan_side_view_brochure__000007.jpg",
+  "imageData": null,
+  "imageHeight": 533,
+  "imageWidth": 800
+}

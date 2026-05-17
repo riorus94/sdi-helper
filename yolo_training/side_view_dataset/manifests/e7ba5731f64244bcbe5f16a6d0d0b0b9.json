@@ -1,0 +1,19 @@
+{
+  "uuid": "e7ba5731f64244bcbe5f16a6d0d0b0b9",
+  "image_url": "file:///D:/project/sdi-helper/yolo_training/side_view_dataset/cars_train/sedan_side_profile_studio_shot__000035.jpg",
+  "source_name": "local",
+  "query": "Hyundai Stargazer front view photo",
+  "domain": "real",
+  "view": "side",
+  "split": "train",
+  "view_confidence": 0.8009560480713844,
+  "bboxes": [
+    {
+      "cx": 0.5088962841033936,
+      "cy": 0.5286379635432862,
+      "w": 0.9777872657775879,
+      "h": 0.40518613597053793,
+      "confidence": 0.726969301700592
+    }
+  ]
+}

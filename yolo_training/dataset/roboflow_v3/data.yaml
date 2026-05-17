@@ -1,0 +1,12 @@
+names:
+- '0'
+nc: 1
+roboflow:
+  license: MIT
+  project: wheel-bbox-final
+  url: https://universe.roboflow.com/akhmad-rio-rusdiano/wheel-bbox-final/dataset/3
+  version: 3
+  workspace: akhmad-rio-rusdiano
+test: ../test/images
+train: ../train/images
+val: ../valid/images

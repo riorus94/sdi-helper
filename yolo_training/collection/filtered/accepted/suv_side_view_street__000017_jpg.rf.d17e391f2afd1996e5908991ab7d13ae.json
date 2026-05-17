@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.200"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.200"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.200"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.200"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.200"
+    }
+  ],
+  "imagePath": "suv_side_view_street__000017_jpg.rf.d17e391f2afd1996e5908991ab7d13ae.jpg",
+  "imageData": null,
+  "imageHeight": 640,
+  "imageWidth": 640
+}

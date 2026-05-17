@@ -1,0 +1,77 @@
+{
+  "roof_apex": {
+    "x_norm": -0.13878326987587275,
+    "y_norm": -4.94114299629936,
+    "confidence": 0.85
+  },
+  "side_window_top_front": {
+    "x_norm": -0.14055585036151821,
+    "y_norm": -4.614313524110496,
+    "confidence": 0.85
+  },
+  "side_window_top_rear": {
+    "x_norm": -0.05734886892730737,
+    "y_norm": -4.573145665223664,
+    "confidence": 0.85
+  },
+  "front_bumper": {
+    "x_norm": -0.40647640199470986,
+    "y_norm": -1.9964584520624478,
+    "confidence": 0.85
+  },
+  "rear_bumper": {
+    "x_norm": 0.08655389232305413,
+    "y_norm": -2.243168182278309,
+    "confidence": 0.85
+  },
+  "fender_arch_front": {
+    "x_norm": -0.3165518847182714,
+    "y_norm": -2.3541084779168826,
+    "confidence": 0.85
+  },
+  "fender_arch_rear": {
+    "x_norm": -0.0012278341538031882,
+    "y_norm": -2.3547048968299285,
+    "confidence": 0.85
+  },
+  "hood_edge": {
+    "x_norm": -0.3205067330549974,
+    "y_norm": -3.3995957048347214,
+    "confidence": 0.85
+  },
+  "body_waist_front": {
+    "x_norm": -0.175903108071409,
+    "y_norm": -2.920526497461239,
+    "confidence": 0.85
+  },
+  "body_waist_rear": {
+    "x_norm": -0.05616364569091449,
+    "y_norm": -3.0953778501152307,
+    "confidence": 0.85
+  },
+  "panel_front": {
+    "x_norm": -0.3607745772622188,
+    "y_norm": -1.1528334816568149,
+    "confidence": 0.85
+  },
+  "panel_rear": {
+    "x_norm": 0.03926687655598157,
+    "y_norm": -1.3666925760479773,
+    "confidence": 0.85
+  },
+  "windshield_base": {
+    "x_norm": -0.29641931103887825,
+    "y_norm": -3.5187217860907576,
+    "confidence": 0.85
+  },
+  "rear_glass_base": {
+    "x_norm": 0.0694086185201036,
+    "y_norm": -3.8047475238951134,
+    "confidence": 0.85
+  },
+  "ground_ref": {
+    "x_norm": -0.14360340710246144,
+    "y_norm": 0.021318593225636295,
+    "confidence": 0.85
+  }
+}

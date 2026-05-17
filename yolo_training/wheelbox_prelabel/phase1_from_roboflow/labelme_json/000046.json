@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          642.3162841796875,
+          285.25701904296875
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.928"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          642.3162841796875,
+          339.6905212402344
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.928"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          173.5613555908203,
+          285.326171875
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.928"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          173.5613555908203,
+          341.1324157714844
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.928"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          642.3162841796875,
+          341.1324157714844
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.939"
+    }
+  ],
+  "imagePath": "000046.jpg",
+  "imageData": null,
+  "imageHeight": 457,
+  "imageWidth": 800
+}

@@ -1,0 +1,19 @@
+{
+  "uuid": "143ebad723574f1189e578091c4bb81f",
+  "image_url": "file:///C:/Users/Admin/Downloads/stanford-cars-dataset/cars_train/cars_train/00812.jpg",
+  "source_name": "local",
+  "query": "Hyundai Stargazer front view photo",
+  "domain": "real",
+  "view": "side",
+  "split": "train",
+  "view_confidence": 0.8848364073783159,
+  "bboxes": [
+    {
+      "cx": 0.4979383945465088,
+      "cy": 0.5104458385043674,
+      "w": 0.9923228263854981,
+      "h": 0.68635556962755,
+      "confidence": 0.40955325961112976
+    }
+  ]
+}

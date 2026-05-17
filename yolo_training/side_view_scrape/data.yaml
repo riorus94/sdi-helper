@@ -1,0 +1,4 @@
+# YOLOv8 Classification Data Config
+path: ./yolo_training/side_view_scrape/images
+train: train
+val: val

@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          638.3662109375,
+          376.0875549316406
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.919"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          638.3662109375,
+          431.6548767089844
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.919"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          161.8439483642578,
+          374.6773376464844
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.919"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          161.8439483642578,
+          432.97430419921875
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.919"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          638.3662109375,
+          432.97430419921875
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.934"
+    }
+  ],
+  "imagePath": "000015_suv_side_profile_studio_shot.jpg",
+  "imageData": null,
+  "imageHeight": 603,
+  "imageWidth": 800
+}

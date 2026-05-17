@@ -1,0 +1,19 @@
+{
+  "uuid": "daaf2bb0e1004717be82b1c9fe3c594a",
+  "image_url": "file:///D:/project/sdi-helper/yolo_training/side_view_dataset/cars_train/suv_side_view_white_background__000018.jpg",
+  "source_name": "local",
+  "query": "Hyundai Stargazer front view photo",
+  "domain": "real",
+  "view": "side",
+  "split": "train",
+  "view_confidence": 0.8488504395354539,
+  "bboxes": [
+    {
+      "cx": 0.5087415504455567,
+      "cy": 0.5816738637288411,
+      "w": 0.8191794967651367,
+      "h": 0.4060692850748698,
+      "confidence": 0.5184725522994995
+    }
+  ]
+}

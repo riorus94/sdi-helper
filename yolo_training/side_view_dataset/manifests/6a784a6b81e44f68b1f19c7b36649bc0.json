@@ -1,0 +1,19 @@
+{
+  "uuid": "6a784a6b81e44f68b1f19c7b36649bc0",
+  "image_url": "file:///D:/project/sdi-helper/yolo_training/side_view_dataset/cars_train/rejected__side_profile_car_review__000020.jpg",
+  "source_name": "local",
+  "query": "Hyundai Stargazer front view photo",
+  "domain": "real",
+  "view": "side",
+  "split": "train",
+  "view_confidence": 0.908282671822235,
+  "bboxes": [
+    {
+      "cx": 0.273710105078561,
+      "cy": 0.4916898018973214,
+      "w": 0.5452963774544852,
+      "h": 0.9833796037946428,
+      "confidence": 0.6974247097969055
+    }
+  ]
+}

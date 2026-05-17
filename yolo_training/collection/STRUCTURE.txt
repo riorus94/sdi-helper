@@ -1,0 +1,26 @@
+# Image collection pipeline — side-view wheel detection dataset
+#
+# LEGAL NOTICE (read before running):
+#   All downloaded images remain subject to the copyright of their original
+#   creators / platforms.  This script downloads images for INTERNAL MODEL
+#   TRAINING only.  Do not redistribute the raw images.
+#   Sources used here (Unsplash, Pexels) grant free use for ML training
+#   under their respective API licences.  Bing Image Search results may
+#   contain copyrighted images — use only for internal R&D under fair use.
+#   When in doubt: annotate and train, do NOT publish the dataset itself.
+
+path: collection/
+
+raw:              # everything downloaded — not yet filtered
+  images/
+  urls.csv        # source URL per image (for attribution / reproducibility)
+
+filtered/
+  accepted/       # passed heuristic filter, ready for manual review
+  rejected/       # failed heuristic filter (kept for audit)
+  review/         # borderline — operator must decide
+
+# After operator review:
+#   accepted/ → copy to ../dataset/images/train+val
+#   rejected/ → delete after audit
+#   review/   → re-examine in next sprint

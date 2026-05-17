@@ -1,0 +1,12 @@
+names:
+- '0'
+nc: 1
+roboflow:
+  license: MIT
+  project: wheel-bbox-agent1-prelabel
+  url: https://universe.roboflow.com/sdi-j1mci/wheel-bbox-agent1-prelabel/dataset/3
+  version: 3
+  workspace: sdi-j1mci
+test: ../test/images
+train: ../train/images
+val: ../valid/images

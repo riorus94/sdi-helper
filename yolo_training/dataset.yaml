@@ -1,0 +1,28 @@
+# YOLO detection dataset — side-view wheel detection (Phase 1)
+#
+# Task:   detect   (bounding box, NOT pose / keypoints)
+# Scope:  side-view images only
+# Class:  wheel (nc=1)
+# Format: YOLO bbox  <class_id> <cx_norm> <cy_norm> <w_norm> <h_norm>
+#
+# Wheel centre is derived from the bbox centre at inference time:
+#   cx_px = cx_norm * image_width
+#   cy_px = cy_norm * image_height
+#
+# Front/rear assignment heuristic (vehicle facing RIGHT in image):
+#   rightmost bbox centre  → A (front_wheel_center)
+#   leftmost  bbox centre  → B (rear_wheel_center)
+#
+# Dataset split: 80 / 20 train / val (no test split required for Phase 1)
+# Minimum to start training: 50 train images
+# Accept criteria: val mAP50 >= 0.70  (wheels consistently detected)
+
+path: dataset   # relative to this yaml file → yolo_training/dataset/
+
+train: images/train
+val:   images/val
+
+# 1 class: wheel
+nc: 1
+names:
+  0: wheel

@@ -1,0 +1,82 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          1032.136962890625,
+          687.2939453125
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.882"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          1032.136962890625,
+          784.0953369140625
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.882"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          264.4131164550781,
+          703.3386840820312
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.882"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          264.4131164550781,
+          798.7021484375
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.882"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          1032.136962890625,
+          798.7021484375
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.900"
+    }
+  ],
+  "imagePath": "car_side_view__000004.jpg",
+  "imageData": null,
+  "imageHeight": 854,
+  "imageWidth": 1280
+}
