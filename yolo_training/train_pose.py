@@ -144,13 +144,18 @@ def _build_pose_dataset(
     Returns:
         (train_count, val_count)
     """
-    if not WHEEL_IMAGE_TRAIN_DIR.exists():
-        raise SystemExit(f"Missing wheel train image dir: {WHEEL_IMAGE_TRAIN_DIR}")
-    if not WHEEL_IMAGE_VAL_DIR.exists():
-        raise SystemExit(f"Missing wheel val image dir: {WHEEL_IMAGE_VAL_DIR}")
     label_dir = pose_label_dir or POSE_LABEL_DIR
     if not label_dir.exists():
         raise SystemExit(f"Missing pose label dir: {label_dir}")
+
+    source_dirs = _source_dirs()
+    existing_sources = [src for src, _, _ in source_dirs if src.exists()]
+    if not existing_sources:
+        expected = ", ".join(str(src) for src, _, _ in source_dirs)
+        raise SystemExit(
+            "No source image directories available for pose dataset build. "
+            f"Checked: {expected}"
+        )
 
     image_index = _build_image_index()
     if not image_index:
