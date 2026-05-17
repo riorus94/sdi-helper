@@ -132,10 +132,15 @@ def convert_json(
             break
 
     if img_path is None:
-        print(f"  SKIP (image not found): {json_path.name}")
-        return False
-
-    W, H = _image_size(img_path)
+        # Fall back to dimensions embedded in the LabelMe JSON
+        W = data.get("imageWidth")
+        H = data.get("imageHeight")
+        if not W or not H:
+            print(f"  SKIP (image not found, no size in JSON): {json_path.name}")
+            return False
+        W, H = int(W), int(H)
+    else:
+        W, H = _image_size(img_path)
 
     # Collect annotated keypoints — label → (x_px, y_px)
     kp_index: dict[str, int] = {name: i for i, name in enumerate(kp_order)}
