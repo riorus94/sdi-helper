@@ -46,6 +46,25 @@ profiles before assigning detected wheel boxes to front/rear labels. If CLIP is
 not confident enough, Agent 1 keeps the conservative right-looking assignment
 and records the CLIP score in the quality report for human review.
 
+## 9KP Upgrade Path
+
+After the 5KP ground-ref labels are clean, Agent 1 can generate a 9-keypoint
+side-view draft with wheel anchors, ground_ref, fender arches, and bumpers:
+
+```powershell
+python scripts/suggest_keypoints.py \
+  --image-dir dataset_raw/images/train/side \
+  --output yolo_training/side_view_dataset/labelme_json_9kp_side \
+  --priority-config config/agent1_keypoint_priority_9kp_side.json \
+  --phase-only phase1 \
+  --orientation-classifier clip \
+  --quality-report logs/agent1_9kp_side_quality.csv \
+  --overwrite
+```
+
+The 9KP output should still go through human review, especially for
+`front_bumper` and `rear_bumper` on cropped or non-90-degree images.
+
 ## Validation Gate (Mandatory)
 After generation, verify every JSON contains only the 5 labels above.
 

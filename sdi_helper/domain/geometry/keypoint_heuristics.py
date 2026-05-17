@@ -180,6 +180,7 @@ def estimate_keypoints(
     
     # Compute detected wheel geometry
     det_wheelbase = abs(fx - rx)
+    direction = 1.0 if fx >= rx else -1.0
     det_front_radius = abs(fg_y - fy)
     det_rear_radius = abs(rg_y - ry)
     det_radius = (det_front_radius + det_rear_radius) / 2.0
@@ -193,8 +194,8 @@ def estimate_keypoints(
     wheel_y_diff = abs(fg_y - rg_y)
     alignment_penalty = 0.0 if wheel_y_diff <= det_radius * 0.5 else 0.3
 
-    # cv_service parity transform (anisotropic):
-    # sx from wheelbase, sy from wheel radius, anchor at rear wheel ground.
+    # Normalize all non-wheel landmarks around rear wheel ground. X is mirrored
+    # for left-looking side views while Y scales by detected wheel radius.
     ref_fwc = REFERENCE_TEMPLATE_PX["front_wheel_center"]
     ref_rwc = REFERENCE_TEMPLATE_PX["rear_wheel_center"]
     ref_fwg = REFERENCE_TEMPLATE_PX["front_wheel_ground"]
@@ -205,12 +206,7 @@ def estimate_keypoints(
     ref_rear_radius = abs(ref_rwg[1] - ref_rwc[1])
     ref_radius = (ref_front_radius + ref_rear_radius) / 2.0
 
-    sx = det_wheelbase / ref_wheelbase if ref_wheelbase > 1 else 1.0
-    sy = det_radius / ref_radius if ref_radius > 1 and det_radius > 1 else sx
-
-    anchor_ref_x, anchor_ref_y = ref_rwg[0], ref_rwg[1]
-    tx = rg_x - anchor_ref_x * sx
-    ty = rg_y - anchor_ref_y * sy
+    sy = det_radius / ref_radius if ref_radius > 1 and det_radius > 1 else 1.0
 
     geometry_score = _geometry_score(det_wheelbase, det_radius, wheel_y_diff)
     
@@ -239,6 +235,12 @@ def estimate_keypoints(
                 estimates[kp_name] = KeypointEstimate(
                     x=rg_x, y=rg_y, confidence=wheels.confidence
                 )
+        elif kp_name == "ground_ref":
+            estimates[kp_name] = KeypointEstimate(
+                x=(fg_x + rg_x) / 2.0,
+                y=(fg_y + rg_y) / 2.0,
+                confidence=wheels.confidence,
+            )
         else:
             # Either use learned prior (normalized) or template pixels.
             prior = prior_map.get(kp_name)
@@ -251,14 +253,14 @@ def estimate_keypoints(
                     prior = None
 
             if prior is not None:
-                est_x = rg_x + prior.x_norm * det_wheelbase
+                est_x = rg_x + direction * prior.x_norm * det_wheelbase
                 est_y = rg_y + prior.y_norm * det_radius
                 prior_conf = prior.confidence
             else:
-                ref_x, ref_y, ref_conf = REFERENCE_TEMPLATE_PX[kp_name]
-                est_x = ref_x * sx + tx
-                est_y = ref_y * sy + ty
-                prior_conf = ref_conf
+                template_prior = template_priors[kp_name]
+                est_x = rg_x + direction * template_prior.x_norm * det_wheelbase
+                est_y = rg_y + template_prior.y_norm * det_radius
+                prior_conf = template_prior.confidence
 
             # Confidence fusion:
             # 0.60 wheel confidence + 0.25 geometry quality + 0.15 prior confidence.

@@ -1,6 +1,7 @@
 from sdi_helper.domain.geometry.keypoint_heuristics import (
     KeypointEstimate,
     WheelDetection,
+    estimate_keypoints,
     infer_orientation_from_x,
     validate_keypoint_geometry,
 )
@@ -49,3 +50,21 @@ def test_validate_geometry_flags_orientation_inconsistency_with_wheels() -> None
 
     assert not is_valid
     assert any("bumper orientation disagrees with wheel orientation" in w for w in warnings)
+
+
+def test_estimate_keypoints_mirrors_non_wheel_points_for_left_looking_views() -> None:
+    wheels = WheelDetection(
+        front_center=(100.0, 450.0),
+        front_ground=(100.0, 500.0),
+        rear_center=(300.0, 450.0),
+        rear_ground=(300.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+
+    keypoints = estimate_keypoints(wheels)
+
+    assert keypoints["front_bumper"].x < keypoints["rear_bumper"].x
+    assert keypoints["fender_arch_front"].x < keypoints["fender_arch_rear"].x
+    assert keypoints["ground_ref"].x == 200.0
+    assert keypoints["ground_ref"].y == 500.0
