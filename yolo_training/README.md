@@ -53,6 +53,20 @@ cd D:\project\sdi-helper
   --img-dir yolo_training\dataset\images\val
 ```
 
+For the 5-keypoint no-roof setup, keep conversion and training in the same
+order. The converter derives `ground_ref` from the midpoint of
+`front_wheel_ground` and `rear_wheel_ground` when both wheel-ground points are
+present, even if the LabelMe JSON also contains a `ground_ref` point:
+
+```powershell
+$env:POSE_KEYPOINTS='ground_ref,front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground'
+.\.venv\Scripts\python.exe yolo_training\labelme_to_yolo_pose.py `
+  --input yolo_training\side_view_dataset\labelme_json_stanford_screening `
+  --output yolo_training\side_view_dataset\labels_pose_5kp_no_roof `
+  --img-dir yolo_training\dataset\images\train `
+  --keypoints $env:POSE_KEYPOINTS
+```
+
 3. Train pose model (separate from wheel bbox):
 
 ```powershell

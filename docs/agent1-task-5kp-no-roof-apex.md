@@ -37,8 +37,14 @@ python scripts/suggest_keypoints.py \
   --output yolo_training/side_view_dataset/labelme_json_stanford_screening \
   --priority-config config/agent1_keypoint_priority_5kp_no_roof_apex.json \
   --phase-only phase1 \
+  --orientation-classifier clip \
   --overwrite
 ```
+
+The CLIP orientation option prompts for left-looking vs right-looking side
+profiles before assigning detected wheel boxes to front/rear labels. If CLIP is
+not confident enough, Agent 1 keeps the conservative right-looking assignment
+and records the CLIP score in the quality report for human review.
 
 ## Validation Gate (Mandatory)
 After generation, verify every JSON contains only the 5 labels above.

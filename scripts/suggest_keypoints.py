@@ -125,6 +125,15 @@ class SuggestionResult:
 
 
 @dataclass
+class OrientationPrediction:
+    """Predicted side-view heading for front/rear wheel assignment."""
+
+    orientation: str
+    confidence: float
+    margin: float
+
+
+@dataclass
 class WheelboxPrelabelResult:
     """Result of wheelbox pre-labeling for a single image."""
     image_path: Path
@@ -132,6 +141,65 @@ class WheelboxPrelabelResult:
     success: bool
     boxes_written: int
     error: Optional[str] = None
+
+
+class ClipOrientationClassifier:
+    """CLIP prompt classifier for side-view left/right vehicle heading."""
+
+    _PROMPTS: Dict[str, List[str]] = {
+        "right-looking": [
+            "a pure side profile photo of a car facing right",
+            "a side view of a vehicle with the front bumper and headlights on the right",
+            "a car side profile where the hood points to the right side of the image",
+            "a lateral car photo with the rear on the left and the front on the right",
+        ],
+        "left-looking": [
+            "a pure side profile photo of a car facing left",
+            "a side view of a vehicle with the front bumper and headlights on the left",
+            "a car side profile where the hood points to the left side of the image",
+            "a lateral car photo with the rear on the right and the front on the left",
+        ],
+    }
+
+    def __init__(
+        self,
+        *,
+        min_confidence: float = 0.55,
+        min_margin: float = 0.08,
+        model_name: str = "openai/clip-vit-base-patch32",
+    ) -> None:
+        self.min_confidence = min_confidence
+        self.min_margin = min_margin
+        self.model_name = model_name
+        self._labels = list(self._PROMPTS.keys())
+        self._flat_texts: List[str] = []
+        self._owner_idx: List[int] = []
+        for idx, label in enumerate(self._labels):
+            for prompt in self._PROMPTS[label]:
+                self._flat_texts.append(prompt)
+                self._owner_idx.append(idx)
+
+    def classify(self, image: np.ndarray) -> OrientationPrediction:
+        from sdi_helper.infrastructure.models._clip_loader import clip_text_scores
+
+        flat_scores = clip_text_scores(image, self._flat_texts, self.model_name)
+        per_orientation = np.zeros(len(self._labels), dtype=np.float64)
+        for idx, score in enumerate(flat_scores):
+            per_orientation[self._owner_idx[idx]] += float(score)
+
+        order = np.argsort(per_orientation)
+        best = int(order[-1])
+        second = int(order[-2])
+        confidence = float(per_orientation[best])
+        margin = float(per_orientation[best] - per_orientation[second])
+        orientation = self._labels[best]
+        if confidence < self.min_confidence or margin < self.min_margin:
+            orientation = "right-looking"
+        return OrientationPrediction(
+            orientation=orientation,
+            confidence=confidence,
+            margin=margin,
+        )
 
 
 class KeypointSuggester:
@@ -142,6 +210,7 @@ class KeypointSuggester:
         model_path: Optional[Path] = None,
         priors: Optional[Dict[str, KeypointPrior]] = None,
         priority_config: Optional[PriorityConfig] = None,
+        orientation_classifier: Optional[ClipOrientationClassifier] = None,
     ):
         """Initialize the suggester with Phase 1 wheel model."""
         expected_paths = self._candidate_model_paths()
@@ -163,6 +232,7 @@ class KeypointSuggester:
             phase1_min_confidence=0.75,
             phase_groups=DEFAULT_KEYPOINT_PHASES,
         )
+        self.orientation_classifier = orientation_classifier
 
     @staticmethod
     def _candidate_model_paths() -> List[Path]:
@@ -299,11 +369,35 @@ class KeypointSuggester:
             if image is None:
                 raise ValueError(f"Failed to read image: {image_path}")
             
-            # Detect wheels
-            wheels = self._detect_wheels(image)
             validation_prefix: List[str] = []
+            orientation_prediction = None
+            if self.orientation_classifier is not None:
+                orientation_prediction = self.orientation_classifier.classify(image)
+                validation_prefix.append(
+                    "orientation_clip:"
+                    f" {orientation_prediction.orientation}"
+                    f" confidence={orientation_prediction.confidence:.3f}"
+                    f" margin={orientation_prediction.margin:.3f}"
+                )
+
+            # Detect wheels
+            wheels = self._detect_wheels(
+                image,
+                orientation=(
+                    orientation_prediction.orientation
+                    if orientation_prediction is not None
+                    else "right-looking"
+                ),
+            )
             if wheels is None:
-                wheels = self._fallback_wheels_from_image(image)
+                wheels = self._fallback_wheels_from_image(
+                    image,
+                    orientation=(
+                        orientation_prediction.orientation
+                        if orientation_prediction is not None
+                        else "right-looking"
+                    ),
+                )
                 validation_prefix.append("fallback_wheels: detector missed wheels, used image-geometry anchors")
             
             # Estimate keypoints
@@ -589,7 +683,12 @@ class KeypointSuggester:
             selected = selected[:max_boxes]
         return selected
     
-    def _detect_wheels(self, image: np.ndarray) -> Optional[WheelDetection]:
+    def _detect_wheels(
+        self,
+        image: np.ndarray,
+        *,
+        orientation: str = "right-looking",
+    ) -> Optional[WheelDetection]:
         """
         Detect wheels in image using Phase 1 model.
         
@@ -623,11 +722,15 @@ class KeypointSuggester:
             y_ground = y2  # Bottom of bounding box = ground contact
             wheel_data.append((cx, cy, y_ground, conf))
         
-        # Sort by X coordinate: rear (left) and front (right)
+        # Sort by X coordinate, then assign front/rear based on side heading.
         wheel_data.sort(key=lambda x: x[0])
 
-        rear_wheel = wheel_data[0]
-        front_wheel = wheel_data[-1]
+        if orientation == "left-looking":
+            front_wheel = wheel_data[0]
+            rear_wheel = wheel_data[-1]
+        else:
+            rear_wheel = wheel_data[0]
+            front_wheel = wheel_data[-1]
 
         rear_cx, rear_cy, rear_ground, rear_conf = rear_wheel
         front_cx, front_cy, front_ground, front_conf = front_wheel
@@ -643,11 +746,21 @@ class KeypointSuggester:
         )
 
     @staticmethod
-    def _fallback_wheels_from_image(image: np.ndarray) -> WheelDetection:
+    def _fallback_wheels_from_image(
+        image: np.ndarray,
+        *,
+        orientation: str = "right-looking",
+    ) -> WheelDetection:
         """Estimate coarse wheel anchors from image geometry when detection fails."""
         h, w = image.shape[:2]
-        rear_x = 0.30 * w
-        front_x = 0.72 * w
+        left_x = 0.30 * w
+        right_x = 0.72 * w
+        if orientation == "left-looking":
+            front_x = left_x
+            rear_x = right_x
+        else:
+            rear_x = left_x
+            front_x = right_x
         ground_y = 0.84 * h
         center_y = 0.73 * h
         return WheelDetection(
@@ -1083,6 +1196,24 @@ def main():
         default=None,
         help="Limit keypoint JSON output to a single phase for Pareto-first prelabeling",
     )
+    parser.add_argument(
+        "--orientation-classifier",
+        choices=("none", "clip"),
+        default="none",
+        help="Optional side-heading classifier before front/rear wheel assignment",
+    )
+    parser.add_argument(
+        "--orientation-min-confidence",
+        type=float,
+        default=0.55,
+        help="Minimum CLIP orientation confidence before using left-looking assignment",
+    )
+    parser.add_argument(
+        "--orientation-min-margin",
+        type=float,
+        default=0.08,
+        help="Minimum CLIP left/right margin before using left-looking assignment",
+    )
     
     args = parser.parse_args()
     
@@ -1098,6 +1229,12 @@ def main():
 
     priors = _load_priors(args.priors_file)
     priority_config = _load_priority_config(args.priority_config)
+    orientation_classifier = None
+    if args.orientation_classifier == "clip":
+        orientation_classifier = ClipOrientationClassifier(
+            min_confidence=args.orientation_min_confidence,
+            min_margin=args.orientation_min_margin,
+        )
 
     # Initialize suggester
     try:
@@ -1105,6 +1242,7 @@ def main():
             model_path=args.model_path,
             priors=priors,
             priority_config=priority_config,
+            orientation_classifier=orientation_classifier,
         )
     except FileNotFoundError as e:
         logger.error(str(e))

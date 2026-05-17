@@ -76,6 +76,14 @@ DEFAULT_KP_ORDER: list[str] = [
     "ground_ref",         # 18
 ]
 
+FIVE_KP_NO_ROOF_ORDER: list[str] = [
+    "ground_ref",
+    "front_wheel_center",
+    "front_wheel_ground",
+    "rear_wheel_center",
+    "rear_wheel_ground",
+]
+
 
 def parse_keypoint_order(keypoints_arg: str | None) -> list[str]:
     """Return selected keypoint order from CLI arg.
@@ -106,6 +114,38 @@ def _image_size(img_path: pathlib.Path) -> tuple[int, int]:
     """Return (width, height) of image."""
     with Image.open(img_path) as im:
         return im.size  # (W, H)
+
+
+def _is_five_kp_no_roof_setup(kp_order: list[str]) -> bool:
+    return set(kp_order) == set(FIVE_KP_NO_ROOF_ORDER) and len(kp_order) == 5
+
+
+def _midpoint(
+    a: tuple[float, float],
+    b: tuple[float, float],
+) -> tuple[float, float]:
+    return ((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0)
+
+
+def _derive_ground_ref_for_5kp(
+    annotated: dict[str, tuple[float, float]],
+    json_name: str,
+) -> None:
+    """Derive ground_ref from wheel contact points for the 5KP no-roof setup."""
+    front_ground = annotated.get("front_wheel_ground")
+    rear_ground = annotated.get("rear_wheel_ground")
+    if front_ground is None or rear_ground is None:
+        return
+
+    derived = _midpoint(front_ground, rear_ground)
+    existing = annotated.get("ground_ref")
+    if existing is not None and existing != derived:
+        print(
+            "  WARN ground_ref in "
+            f"{json_name} derived from front_wheel_ground/rear_wheel_ground "
+            "for 5KP no-roof export"
+        )
+    annotated["ground_ref"] = derived
 
 
 def convert_json(
@@ -153,7 +193,16 @@ def convert_json(
             print(f"  WARN unknown label '{label}' in {json_path.name} — skipped")
             continue
         x, y = shape["points"][0]
+        if label in annotated:
+            print(
+                f"  WARN duplicate label '{label}' in {json_path.name} "
+                "- keeping first point, skipped duplicate"
+            )
+            continue
         annotated[label] = (float(x), float(y))
+
+    if _is_five_kp_no_roof_setup(kp_order):
+        _derive_ground_ref_for_5kp(annotated, json_path.name)
 
     if not annotated:
         print(f"  SKIP (no valid points): {json_path.name}")
