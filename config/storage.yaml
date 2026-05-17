@@ -1,0 +1,10 @@
+# Storage backend selection. Overridden by env var STORAGE_BACKEND.
+backend: local
+
+local:
+  root: ./dataset_raw
+
+s3:
+  bucket: ${S3_BUCKET}
+  prefix: datasets/cars/v1
+  region: ${AWS_REGION}

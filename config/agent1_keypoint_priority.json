@@ -1,0 +1,31 @@
+{
+  "active_priority_phase": "phase1",
+  "phase1_min_confidence": 0.75,
+  "phase_groups": {
+    "phase1": [
+      "front_wheel_center",
+      "front_wheel_ground",
+      "rear_wheel_center",
+      "rear_wheel_ground",
+      "ground_ref"
+    ],
+    "phase2": [
+      "front_bumper",
+      "rear_bumper",
+      "roof_apex",
+      "hood_edge",
+      "windshield_base",
+      "rear_glass_base",
+      "side_window_top_front",
+      "side_window_top_rear"
+    ],
+    "phase3": [
+      "fender_arch_front",
+      "fender_arch_rear",
+      "body_waist_front",
+      "body_waist_rear",
+      "panel_front",
+      "panel_rear"
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+# Enabled image sources, iterated per query in order.
+enabled:
+  - local
+  # - google
+  # - bing
+  # - duckduckgo
+  # - used_car       # backlog (OLX, Mobil123)
+
+max_results_per_query: 200

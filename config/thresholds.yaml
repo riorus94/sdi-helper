@@ -1,0 +1,27 @@
+# Quality gate, view confidence, and train/val split thresholds.
+# Maps to QualityGateRules, ViewConfidenceRules, DatasetSplitPolicy.
+#
+# Reference calibration image (side view):
+#   dataset_raw/images/train/side/9f52e8a5cfef44449ef6ea923a2c6f7f.jpg
+#   — White SUV, perfect 90° side view, outdoor/parking lot setting
+#   — Both wheels round and touching the ground, camera at car's midpoint
+#   — Front bumper ≈ 3% from left edge → max_car_edge_margin must be 0.0 to accept
+#   — Car fills ≈ 70% of frame area      → min_car_area_ratio of 0.30 is sufficient
+#   — CLIP side-view confidence ≈ high   → min_confidence 0.60 is a safe floor
+#   All threshold values below are validated against this reference.
+
+quality:
+  min_long_edge: 150            # was 200; Google thumbnails are commonly 200-400
+  max_long_edge: 6000
+  min_aspect: 1.10
+  max_aspect: 4.00
+  min_car_area_ratio: 0.30      # was 0.40; reference image fills ~70% area
+  max_car_edge_margin: 0.0      # CRITICAL: reference front bumper is ~3% from edge;
+                                # any value > 0.03 would reject the reference image
+
+view:
+  min_confidence: 0.60          # was 0.80; relax for thumbnail-grade input
+  min_margin: 0.10              # was 0.15
+
+split:
+  val_every: 5   # 1 in 5 images go to val (deterministic from uuid)

@@ -1,0 +1,60 @@
+# Seed query list. Sprint 2 - Day 5: regenerate via scripts/generate_queries.py
+# Format: free-text strings used as input to ImageSource.search()
+
+queries:
+  # Hyundai Stargazer
+  - Hyundai Stargazer front view photo
+  - Hyundai Stargazer rear view photo
+  - Hyundai Stargazer side view photo
+  # Toyota Avanza
+  - Toyota Avanza 2024 front view photo
+  - Toyota Avanza 2024 rear view photo
+  - Toyota Avanza 2024 side view photo
+  # Honda Brio
+  - Honda Brio 2023 front view photo
+  - Honda Brio 2023 rear view photo
+  - Honda Brio 2023 side view photo
+  # Daihatsu Xenia
+  - Daihatsu Xenia 2023 front view photo
+  - Daihatsu Xenia 2023 rear view photo
+  - Daihatsu Xenia 2023 side view photo
+  # Mitsubishi Xpander
+  - Mitsubishi Xpander 2024 front view photo
+  - Mitsubishi Xpander 2024 rear view photo
+  - Mitsubishi Xpander 2024 side view photo
+  # Suzuki Ertiga
+  - Suzuki Ertiga 2024 front view photo
+  - Suzuki Ertiga 2024 rear view photo
+  - Suzuki Ertiga 2024 side view photo
+  # Toyota Innova
+  - Toyota Innova 2023 front view photo
+  - Toyota Innova 2023 rear view photo
+  - Toyota Innova 2023 side view photo
+  # Honda Mobilio
+  - Honda Mobilio 2023 front view photo
+  - Honda Mobilio 2023 rear view photo
+  - Honda Mobilio 2023 side view photo
+  # Daihatsu Terios
+  - Daihatsu Terios 2023 front view photo
+  - Daihatsu Terios 2023 rear view photo
+  - Daihatsu Terios 2023 side view photo
+  # Mitsubishi Pajero Sport
+  - Mitsubishi Pajero Sport 2023 front view photo
+  - Mitsubishi Pajero Sport 2023 rear view photo
+  - Mitsubishi Pajero Sport 2023 side view photo
+  # Toyota Rush
+  - Toyota Rush 2023 front view photo
+  - Toyota Rush 2023 rear view photo
+  - Toyota Rush 2023 side view photo
+  # Honda BR-V
+  - Honda BR-V 2023 front view photo
+  - Honda BR-V 2023 rear view photo
+  - Honda BR-V 2023 side view photo
+  # Wuling Almaz
+  - Wuling Almaz 2023 front view photo
+  - Wuling Almaz 2023 rear view photo
+  - Wuling Almaz 2023 side view photo
+  # Hyundai Creta
+  - Hyundai Creta 2023 front view photo
+  - Hyundai Creta 2023 rear view photo
+  - Hyundai Creta 2023 side view photo

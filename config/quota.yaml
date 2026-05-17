@@ -1,0 +1,5 @@
+# Per-view target counts. ScrapeUntilQuotaFilled stops when all are met.
+real:
+  front: 5000
+  side: 5000
+  rear: 5000
