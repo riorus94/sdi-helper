@@ -1,5 +1,8 @@
 name: Pose Training Every 20 Minutes (5KP No Roof Apex)
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   schedule:
     - cron: '*/20 * * * *'

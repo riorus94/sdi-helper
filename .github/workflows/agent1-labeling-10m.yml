@@ -1,5 +1,8 @@
 name: Agent1 Labeling Every 10 Minutes
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   schedule:
     - cron: '*/10 * * * *'
