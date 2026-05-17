@@ -1,0 +1,146 @@
+@startuml component
+skinparam defaultFontName "Helvetica Neue, Arial, sans-serif"
+skinparam defaultFontSize 11
+skinparam defaultFontColor #2C3E50
+skinparam backgroundColor  #FAFBFC
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #5D6D7E
+skinparam ArrowThickness 1
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam component {
+  BackgroundColor white
+  BorderColor    #5D6D7E
+  FontColor      #2C3E50
+}
+skinparam interface {
+  BackgroundColor white
+  BorderColor    #2E5C8A
+}
+
+title SDI Helper - Component and Layer View (C4 L3)
+header  Vehicle SDI Platform  |  sdi-helper-architecture  |  ML Platform Team
+footer  v1.0  |  Internal
+
+package "interfaces (entry points)" <<Frame>> #DFF0D8 {
+  [CLI: run_scrape] as CLI
+}
+
+package "application (use cases + ports)" <<Frame>> #DEEAF6 {
+  package "Use Cases" {
+    [ScrapeUntilQuotaFilled] as UC_Scrape
+    [ProcessCandidateImage]  as UC_Process
+    [BuildYoloDataset]       as UC_Build
+  }
+  package "Ports" {
+    interface "ImageSource"      as P_Source
+    interface "ImageDownloader"  as P_DL
+    interface "ObjectDetector"   as P_Det
+    interface "RealPhotoFilter"  as P_Real
+    interface "ViewClassifier"   as P_View
+    interface "FaceDetector"     as P_Face
+    interface "DedupIndex"       as P_Dedup
+    interface "Storage"          as P_Store
+    interface "QuotaRepository"  as P_Quota
+    interface "ConfigProvider"   as P_Cfg
+  }
+}
+
+package "domain (pure, no I/O)" <<Frame>> #FFF3CD {
+  package "Entities" {
+    [ScrapedImage]
+    [CandidateUrl]
+    [QuotaState]
+    [BoundingBox]
+  }
+  package "Value Objects" {
+    [ImageView]
+    [DatasetSplit]
+  }
+  package "Domain Services" {
+    [QualityGateRules]
+    [ViewConfidenceRules]
+    [DatasetSplitPolicy]
+    [StorageKeys]
+  }
+}
+
+package "infrastructure (adapters)" <<Frame>> #ECEFF1 {
+  package "Sources" {
+    [GoogleImagesSource]   as A_Google
+    [BingImagesSource]     as A_Bing
+    [DuckDuckGoSource]     as A_DDG
+    [UsedCarListingSource] as A_Used
+  }
+  package "Models" {
+    [YoloV8Detector]       as A_Yolo
+    [ClipViewClassifier]   as A_View
+    [ClipRealPhotoFilter]  as A_Real
+    [HaarFaceDetector]     as A_Face
+  }
+  package "Dedup" {
+    [PHashIndex]           as A_Phash
+    [ClipEmbeddingIndex]   as A_Clip
+    [CompositeDedupIndex]  as A_Comp
+  }
+  package "Storage" {
+    [LocalStorage]         as A_Local
+    [S3Storage]            as A_S3
+  }
+  package "Config & State" {
+    [YamlConfigProvider]            as A_Cfg
+    [StorageBackedQuotaRepository]  as A_QRepo
+  }
+}
+
+CLI -down-> UC_Scrape
+CLI -down-> UC_Build
+
+UC_Scrape  -down-> P_Source
+UC_Scrape  -down-> P_Quota
+UC_Scrape  -right-> UC_Process
+UC_Process -down-> P_DL
+UC_Process -down-> P_Det
+UC_Process -down-> P_Real
+UC_Process -down-> P_View
+UC_Process -down-> P_Face
+UC_Process -down-> P_Dedup
+UC_Process -down-> P_Store
+UC_Build   -down-> P_Store
+
+UC_Process ..> QualityGateRules
+UC_Process ..> ViewConfidenceRules
+UC_Process ..> DatasetSplitPolicy
+UC_Process ..> StorageKeys
+
+A_Google ..|> P_Source
+A_Bing   ..|> P_Source
+A_DDG    ..|> P_Source
+A_Used   ..|> P_Source
+A_Yolo   ..|> P_Det
+A_View   ..|> P_View
+A_Real   ..|> P_Real
+A_Face   ..|> P_Face
+A_Comp   ..|> P_Dedup
+A_Phash  ..|> P_Dedup
+A_Clip   ..|> P_Dedup
+A_Local  ..|> P_Store
+A_S3     ..|> P_Store
+A_Cfg    ..|> P_Cfg
+A_QRepo  ..|> P_Quota
+
+note as N1
+  **Dependency Rule**
+  Dependencies point inward only.
+  domain  <-  application  <-  infrastructure  <-  interfaces
+end note
+
+legend right
+| **Color**   | **Layer**       |
+|<#FFF3CD>    | domain          |
+|<#DEEAF6>    | application     |
+|<#ECEFF1>    | infrastructure  |
+|<#DFF0D8>    | interfaces      |
+endlegend
+@enduml

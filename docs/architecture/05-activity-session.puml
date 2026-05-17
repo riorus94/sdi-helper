@@ -1,0 +1,84 @@
+@startuml activity-session
+skinparam defaultFontName  "Helvetica Neue, Arial, sans-serif"
+skinparam defaultFontSize  11
+skinparam defaultFontColor #2C3E50
+skinparam backgroundColor  #FAFBFC
+skinparam shadowing        false
+skinparam roundCorner      8
+skinparam ArrowColor       #5D6D7E
+skinparam ArrowFontColor   #5D6D7E
+skinparam ArrowThickness   1
+skinparam TitleFontSize    16
+skinparam TitleFontStyle   bold
+skinparam TitleFontColor   #1A252F
+skinparam activity {
+  BackgroundColor        #FFFFFF
+  BorderColor            #5D6D7E
+  FontColor              #2C3E50
+  StartColor             #2E5C8A
+  EndColor               #2E5C8A
+  BarColor               #2E5C8A
+  DiamondBackgroundColor #FFF8E1
+  DiamondBorderColor     #B58900
+  DiamondFontColor       #2C3E50
+}
+skinparam partition {
+  BorderColor      #5D6D7E
+  FontColor        #1A252F
+  FontStyle        bold
+  BackgroundColor  #FAFBFC
+}
+
+title SDI Helper - Scrape Session Activity
+
+start
+
+partition "1. Inisialisasi" {
+  :Muat konfigurasi dari folder config;
+  :Bangun composition root dan pasang adapter ke port;
+  :Muat QuotaState dari storage;
+  if (state sebelumnya ditemukan?) then (ya)
+    :Lanjutkan dengan jumlah accepted sebelumnya;
+  else (tidak)
+    :Inisialisasi QuotaState dari target di quota.yaml;
+  endif
+}
+
+partition "2. Loop Scraping" {
+  while (masih ada bucket quota yang belum penuh?) is (ya)
+    :Ambil query berikutnya dari antrian;
+    while (masih ada source aktif untuk query ini?) is (ya)
+      :Cari kandidat URL lewat ImageSource;
+      while (ada CandidateUrl berikutnya?) is (ya)
+        :Proses kandidat lewat ProcessCandidateImage;
+        if (hasilnya ACCEPTED?) then (ya)
+          :Tambah hitungan QuotaState untuk view tersebut; <<#27AE60>>
+        else (tidak)
+          :Tambah metrik penolakan berdasarkan alasan; <<#C0392B>>
+        endif
+        if (interval checkpoint tercapai?) then (ya)
+          :Simpan QuotaState ke storage;
+          :Flush DedupIndex;
+        else (tidak)
+          :Lanjut tanpa simpan;
+        endif
+      endwhile (stream URL habis)
+      :Tutup source;
+    endwhile (semua source habis untuk query ini)
+  endwhile (semua bucket view sudah penuh)
+}
+
+partition "3. Finalisasi Dataset" {
+  :Jalankan BuildYoloDataset;
+  :Gabungkan manifest per gambar menjadi urls.csv;
+  :Tulis dataset.yaml dengan path train val dan daftar kelas;
+  :Simpan QuotaState terakhir;
+  :Flush DedupIndex;
+}
+
+partition "4. Laporan" {
+  :Cetak ScrapeReport accepted dan rejected per view per source;
+}
+
+stop
+@enduml

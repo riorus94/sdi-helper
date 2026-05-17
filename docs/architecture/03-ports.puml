@@ -1,0 +1,104 @@
+@startuml ports
+skinparam defaultFontName "Helvetica Neue, Arial, sans-serif"
+skinparam defaultFontSize 11
+skinparam defaultFontColor #2C3E50
+skinparam backgroundColor  #FAFBFC
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam ArrowColor #5D6D7E
+skinparam ArrowThickness 1
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor white
+  BorderColor #2E5C8A
+  HeaderBackgroundColor #DEEAF6
+}
+skinparam interface {
+  BackgroundColor #FFFDF5
+  BorderColor #B58900
+}
+
+title SDI Helper - Ports and Adapters
+header  Vehicle SDI Platform  |  sdi-helper-architecture  |  ML Platform Team
+footer  v1.0  |  Internal
+
+package "Ports  <<application>>" {
+  interface ImageSource <<port>> {
+    + name : str
+    + search(query, max_results) : Iterator<CandidateUrl>
+    + close()
+  }
+  interface ImageDownloader <<port>> {
+    + fetch(url) : bytes | None
+  }
+  interface ObjectDetector <<port>> {
+    + detect_cars(img) : list<Detection>
+  }
+  interface ViewClassifier <<port>> {
+    + classify(img) : ViewClassification | None
+  }
+  interface RealPhotoFilter <<port>> {
+    + is_real_photo(img) : bool
+  }
+  interface FaceDetector <<port>> {
+    + has_face(img) : bool
+  }
+  interface DedupIndex <<port>> {
+    + is_duplicate(img, view) : bool
+    + add(img, view)
+    + flush()
+  }
+  interface Storage <<port>> {
+    + put_bytes(key, data, ct) : str
+    + put_text(key, text) : str
+    + put_json(key, payload) : str
+    + get_bytes(key) : bytes | None
+    + exists(key) : bool
+    + list_keys(prefix) : Iterator<str>
+  }
+  interface QuotaRepository <<port>> {
+    + load() : QuotaState | None
+    + save(state)
+  }
+}
+
+package "Adapters  <<infrastructure>>" {
+  class GoogleImagesSource    <<adapter>>
+  class BingImagesSource      <<adapter>>
+  class RequestsDownloader    <<adapter>>
+  class YoloV8Detector        <<adapter>>
+  class ClipViewClassifier    <<adapter>>
+  class RefAnchorViewClassifier <<adapter>>
+  class ClipRealPhotoFilter   <<adapter>>
+  class HaarFaceDetector      <<adapter>>
+  class PHashIndex            <<adapter>>
+  class ClipEmbeddingIndex    <<adapter>>
+  class CompositeDedupIndex   <<adapter>>
+  class LocalStorage          <<adapter>>
+  class S3Storage             <<adapter>>
+  class StorageBackedQuotaRepository <<adapter>>
+}
+
+GoogleImagesSource          ..|> ImageSource
+BingImagesSource            ..|> ImageSource
+RequestsDownloader          ..|> ImageDownloader
+YoloV8Detector              ..|> ObjectDetector
+ClipViewClassifier          ..|> ViewClassifier
+RefAnchorViewClassifier     ..|> ViewClassifier
+ClipRealPhotoFilter         ..|> RealPhotoFilter
+HaarFaceDetector            ..|> FaceDetector
+PHashIndex                  ..|> DedupIndex
+ClipEmbeddingIndex          ..|> DedupIndex
+CompositeDedupIndex         ..|> DedupIndex
+CompositeDedupIndex         o-- "1" PHashIndex          : phash
+CompositeDedupIndex         o-- "1" ClipEmbeddingIndex  : clip
+LocalStorage                ..|> Storage
+S3Storage                   ..|> Storage
+StorageBackedQuotaRepository ..|> QuotaRepository
+
+note bottom of Storage
+  Same key layout works for both
+  backends. Swap is one env var:
+  STORAGE_BACKEND=local | s3
+end note
+@enduml

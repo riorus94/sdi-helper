@@ -1,0 +1,111 @@
+@startuml sequence
+skinparam defaultFontName "Helvetica Neue, Arial, sans-serif"
+skinparam defaultFontSize 11
+skinparam defaultFontColor #2C3E50
+skinparam backgroundColor  #FAFBFC
+skinparam shadowing false
+skinparam roundCorner 4
+skinparam sequence {
+  ArrowColor #5D6D7E
+  ArrowFontColor #5D6D7E
+  ActorBorderColor #2E5C8A
+  ActorBackgroundColor #DEEAF6
+  LifeLineBorderColor #B0BEC5
+  LifeLineBackgroundColor #ECEFF1
+  ParticipantBorderColor #2E5C8A
+  ParticipantBackgroundColor #FFFFFF
+  GroupBorderColor #5D6D7E
+  GroupBackgroundColor #ECEFF1
+  BoxBorderColor #B0BEC5
+  BoxBackgroundColor #FAFBFC
+}
+
+title SDI Helper - ProcessCandidateImage Runtime Flow
+header  Vehicle SDI Platform  |  sdi-helper-architecture  |  ML Platform Team
+footer  v1.0  |  Internal
+
+autonumber "<b>[0]"
+
+actor "Scrape Loop" as Loop
+
+box "Application" #DEEAF6
+participant "ProcessCandidateImage" as UC
+end box
+
+box "Domain (pure)" #FFF3CD
+participant "QualityGateRules" as Q
+participant "ViewConfidenceRules" as VR
+participant "DatasetSplitPolicy" as SP
+participant "QuotaState" as Quota
+end box
+
+box "Infrastructure" #ECEFF1
+participant "ImageDownloader" as DL
+participant "ObjectDetector" as YOLO
+participant "FaceDetector" as Face
+participant "RealPhotoFilter" as Real
+participant "ViewClassifier" as View
+participant "DedupIndex" as Dedup
+participant "Storage" as Store
+end box
+
+Loop -> UC : execute(candidate)
+
+== Stage 1 - Cheap filters (no model) ==
+UC -> DL : fetch(url)
+DL --> UC : bytes
+UC -> UC : decode bytes to ndarray
+UC -> Q : check_size_aspect(w,h)
+alt fails
+  UC --> Loop : REJECTED_HEURISTIC
+end
+UC -> Dedup : is_duplicate(img) [pHash]
+alt duplicate
+  UC --> Loop : REJECTED_DEDUP
+end
+
+== Stage 2 - Detection and content gates ==
+UC -> YOLO : detect_cars(img)
+YOLO --> UC : list<Detection>
+UC -> Q : check_car_presence(area)
+alt no car
+  UC --> Loop : REJECTED_NO_CAR
+end
+UC -> Face : has_face(img)
+alt has face
+  UC --> Loop : REJECTED_HAS_FACE
+end
+
+== Stage 3 - Semantic gates (CLIP) ==
+UC -> Real : is_real_photo(img)
+alt not real
+  UC --> Loop : REJECTED_NOT_REAL
+end
+UC -> View : classify(img)
+View --> UC : ViewClassification
+UC -> VR : is_confident(classification)
+alt not confident
+  UC --> Loop : REJECTED_VIEW_UNSURE
+end
+
+== Stage 4 - Quota and expensive dedup ==
+UC -> Quota : is_full(view)?
+alt quota met
+  UC --> Loop : REJECTED_QUOTA_FULL
+end
+UC -> Dedup : is_duplicate(img) [CLIP]
+alt duplicate
+  UC --> Loop : REJECTED_DEDUP
+end
+
+== Stage 5 - Persist and record ==
+UC -> SP : split_for(uuid)
+SP --> UC : TRAIN | VAL
+UC -> Store : put_bytes(image_key)
+UC -> Store : put_text(label_key)
+UC -> Store : put_json(manifest_key)
+UC -> Dedup : add(img, view)
+UC -> Quota : increment(view)
+UC --> Loop : **ACCEPTED**(ScrapedImage)
+
+@enduml

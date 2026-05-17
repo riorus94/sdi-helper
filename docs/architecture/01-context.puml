@@ -1,0 +1,44 @@
+@startuml context
+skinparam defaultFontName "Helvetica Neue, Arial, sans-serif"
+skinparam defaultFontSize 12
+skinparam defaultFontColor #2C3E50
+skinparam backgroundColor  #FAFBFC
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam ArrowColor #5D6D7E
+skinparam ArrowThickness 1.2
+skinparam linetype ortho
+
+title SDI Helper - System Context (C4 L1)
+header  Vehicle SDI Platform  |  sdi-helper-architecture  |  ML Platform Team
+footer  v1.0  |  Internal
+
+actor "ML Engineer" as User #08427B
+note bottom of User: Triggers scrape runs,\nconfigures quotas and queries
+
+rectangle "**SDI Helper**\n//Automated dataset builder//\n--\nScrapes, filters, classifies and\nlabels vehicle images for\nYOLO model training" as System #1168BD
+
+rectangle "Google Images\n<<image source>>"    as Google #F5F5F5
+rectangle "Bing Images\n<<image source>>"      as Bing   #F5F5F5
+rectangle "DuckDuckGo\n<<image source>>"       as DDG    #F5F5F5
+rectangle "OLX / Mobil123\n<<image source>>"   as Used   #F5F5F5
+rectangle "AWS S3\n<<dataset store>>"          as S3     #F5F5F5
+rectangle "Vehicle SDI Platform\n<<consumer>>" as SDI    #F5F5F5
+
+User   --> System : configures and operates
+System --> Google : Selenium / HTTP
+System --> Bing   : Selenium / HTTP
+System --> DDG    : HTTPS
+System --> Used   : HTTP scraping
+System --> S3     : s3:PutObject\n(images, labels,\nmanifests, state)
+S3     --> SDI    : aws s3 sync\nfor YOLO training
+
+legend right
+| **Stereotype** | **Meaning** |
+| person         | Human actor |
+| system         | System in scope |
+| image source   | Upstream image provider |
+| dataset store  | Persistent artifact store |
+| consumer       | Downstream system |
+endlegend
+@enduml

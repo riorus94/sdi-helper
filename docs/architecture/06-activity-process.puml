@@ -1,0 +1,128 @@
+@startuml activity-process
+skinparam defaultFontName  "Helvetica Neue, Arial, sans-serif"
+skinparam defaultFontSize  11
+skinparam defaultFontColor #2C3E50
+skinparam backgroundColor  #FAFBFC
+skinparam shadowing        false
+skinparam roundCorner      8
+skinparam ArrowColor       #5D6D7E
+skinparam ArrowFontColor   #5D6D7E
+skinparam ArrowThickness   1
+skinparam TitleFontSize    16
+skinparam TitleFontStyle   bold
+skinparam TitleFontColor   #1A252F
+skinparam activity {
+  BackgroundColor        #FFFFFF
+  BorderColor            #5D6D7E
+  FontColor              #2C3E50
+  StartColor             #2E5C8A
+  EndColor               #2E5C8A
+  BarColor               #2E5C8A
+  DiamondBackgroundColor #FFF8E1
+  DiamondBorderColor     #B58900
+  DiamondFontColor       #2C3E50
+}
+skinparam partition {
+  BorderColor      #5D6D7E
+  FontColor        #1A252F
+  FontStyle        bold
+  BackgroundColor  #FAFBFC
+}
+
+title SDI Helper - Aktivitas ProcessCandidateImage
+
+start
+
+:Terima CandidateUrl dari source;
+
+partition "Tahap 1. Pengambilan" {
+  :Download bytes via ImageDownloader.fetch(url);
+  if (HTTP dan decode berhasil?) then (ya)
+    :Decode bytes menjadi ndarray BGR;
+  else (tidak)
+    :REJECTED_DOWNLOAD; <<#C0392B>>
+    stop
+  endif
+}
+
+partition "Tahap 2. Filter Heuristik dan pHash" {
+  if (ukuran dan aspect rasio sesuai aturan?) then (ya)
+    :Lolos ke filter berikutnya;
+  else (tidak)
+    :REJECTED_HEURISTIC; <<#C0392B>>
+    stop
+  endif
+  if (duplikat pHash dari gambar di run ini?) then (ya)
+    :REJECTED_DEDUP_PHASH; <<#C0392B>>
+    stop
+  else (tidak)
+    :Lolos ke filter berikutnya;
+  endif
+}
+
+partition "Tahap 3. Filter Konten dengan YOLO dan Haar" {
+  :Deteksi mobil via ObjectDetector;
+  if (bbox mobil terbesar menutupi minimal min_car_area_ratio?) then (ya)
+    :Lolos ke filter berikutnya;
+  else (tidak)
+    :REJECTED_NO_CAR; <<#C0392B>>
+    stop
+  endif
+  if (FaceDetector mendeteksi wajah manusia?) then (ya)
+    :REJECTED_HAS_FACE; <<#C0392B>>
+    stop
+  else (tidak)
+    :Lolos ke filter berikutnya;
+  endif
+}
+
+partition "Tahap 4. Filter Semantik dengan CLIP" {
+  if (RealPhotoFilter menilai ini foto asli?) then (ya)
+    :Lolos ke filter berikutnya;
+  else (tidak)
+    :REJECTED_NOT_REAL; <<#C0392B>>
+    stop
+  endif
+  :Klasifikasi view via ViewClassifier;
+  if (view cukup yakin probabilitas minimal 0.80?) then (ya)
+    :Lolos ke filter berikutnya;
+  else (tidak)
+    :REJECTED_VIEW_UNSURE; <<#C0392B>>
+    stop
+  endif
+}
+
+partition "Tahap 5. Quota dan Dedup Lintas Run" {
+  if (bucket quota untuk view ini sudah penuh?) then (ya)
+    :REJECTED_QUOTA_FULL; <<#C0392B>>
+    stop
+  else (tidak)
+    :Lolos ke filter berikutnya;
+  endif
+  if (CLIP embedding sama dengan gambar tersimpan sebelumnya?) then (ya)
+    :REJECTED_DEDUP_CLIP; <<#C0392B>>
+    stop
+  else (tidak)
+    :Lolos ke tahap simpan;
+  endif
+}
+
+partition "Tahap 6. Simpan ke Storage" {
+  :Generate uuid via uuid4;
+  :Tentukan split via DatasetSplitPolicy menjadi TRAIN atau VAL;
+  :Bangun StorageKeys untuk image label dan manifest;
+  fork
+    :Simpan image bytes ke storage;
+  fork again
+    :Simpan label YOLO ke storage;
+  fork again
+    :Simpan manifest JSON ke storage;
+  end fork
+  :Tambahkan ke DedupIndex;
+  :Tambah counter QuotaState untuk view ini;
+}
+
+:ACCEPTED ScrapedImage tersimpan; <<#27AE60>>
+
+stop
+@enduml
