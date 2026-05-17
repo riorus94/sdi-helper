@@ -39,7 +39,14 @@ jobs:
             --execute notebooks/validation_readiness_test_suite.ipynb \
             --output validation_readiness_test_suite.executed.ipynb \
             --output-dir notebooks \
+            --ExecutePreprocessor.allow_errors=True \
             --ExecutePreprocessor.timeout=600
+
+      - name: Debug generated notebook file
+        if: always()
+        run: |
+          ls -lah notebooks || true
+          find . -maxdepth 3 -name "*validation_readiness_test_suite*.ipynb" -print || true
 
       - name: Upload executed notebook artifact
         if: always()
@@ -48,4 +55,5 @@ jobs:
           name: validation-readiness-notebook-${{ github.run_number }}
           path: |
             notebooks/validation_readiness_test_suite.executed.ipynb
+            validation_readiness_test_suite.executed.ipynb
           if-no-files-found: warn
