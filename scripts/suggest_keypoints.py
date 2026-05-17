@@ -202,6 +202,48 @@ class ClipOrientationClassifier:
         )
 
 
+@dataclass
+class SideViewGateResult:
+    passed: bool
+    warnings: List[str]
+
+
+class SideViewGate:
+    """Reject obvious non-lateral candidates before writing LabelMe JSON."""
+
+    def __init__(
+        self,
+        *,
+        min_wheelbase_ratio: float = 0.32,
+        min_wheelbase_to_radius: float = 4.0,
+    ) -> None:
+        self.min_wheelbase_ratio = min_wheelbase_ratio
+        self.min_wheelbase_to_radius = min_wheelbase_to_radius
+
+    def evaluate(self, image: np.ndarray, wheels: WheelDetection) -> SideViewGateResult:
+        h, w = image.shape[:2]
+        wheelbase = abs(wheels.front_center[0] - wheels.rear_center[0])
+        avg_radius = (wheels.front_radius_px + wheels.rear_radius_px) / 2.0
+        if avg_radius <= 0:
+            front_radius = abs(wheels.front_ground[1] - wheels.front_center[1])
+            rear_radius = abs(wheels.rear_ground[1] - wheels.rear_center[1])
+            avg_radius = (front_radius + rear_radius) / 2.0
+
+        warnings: List[str] = []
+        if w > 0 and wheelbase / float(w) < self.min_wheelbase_ratio:
+            warnings.append(
+                "non_side_view: wheelbase too narrow for a clean lateral view"
+            )
+        if avg_radius > 0 and wheelbase / avg_radius < self.min_wheelbase_to_radius:
+            warnings.append(
+                "non_side_view: wheel spacing too small relative to wheel size"
+            )
+        if h > 0 and max(wheels.front_ground[1], wheels.rear_ground[1]) / float(h) < 0.55:
+            warnings.append("non_side_view: wheel ground appears too high in frame")
+
+        return SideViewGateResult(passed=not warnings, warnings=warnings)
+
+
 class KeypointSuggester:
     """Suggests keypoint positions for batch image annotation."""
     
@@ -211,6 +253,7 @@ class KeypointSuggester:
         priors: Optional[Dict[str, KeypointPrior]] = None,
         priority_config: Optional[PriorityConfig] = None,
         orientation_classifier: Optional[ClipOrientationClassifier] = None,
+        side_view_gate: Optional[SideViewGate] = None,
     ):
         """Initialize the suggester with Phase 1 wheel model."""
         expected_paths = self._candidate_model_paths()
@@ -233,6 +276,7 @@ class KeypointSuggester:
             phase_groups=DEFAULT_KEYPOINT_PHASES,
         )
         self.orientation_classifier = orientation_classifier
+        self.side_view_gate = side_view_gate
 
     @staticmethod
     def _candidate_model_paths() -> List[Path]:
@@ -399,6 +443,28 @@ class KeypointSuggester:
                     ),
                 )
                 validation_prefix.append("fallback_wheels: detector missed wheels, used image-geometry anchors")
+            elif self.side_view_gate is not None:
+                gate = self.side_view_gate.evaluate(image, wheels)
+                validation_prefix.extend(gate.warnings)
+                if not gate.passed:
+                    return SuggestionResult(
+                        image_path=image_path,
+                        json_path=json_path,
+                        success=False,
+                        wheel_detections=wheels.source_detections,
+                        keypoints_estimated=0,
+                        avg_confidence=wheels.confidence,
+                        validation_warnings=validation_prefix,
+                        quality_score=0.0,
+                        review_priority=REVIEW_HIGH,
+                        orientation=(
+                            orientation_prediction.orientation
+                            if orientation_prediction is not None
+                            else "unknown"
+                        ),
+                        out_of_frame_count=0,
+                        error="rejected_non_side_view",
+                    )
             
             # Estimate keypoints
             keypoint_estimates = estimate_keypoints(wheels, learned_priors=self.priors)
@@ -720,7 +786,8 @@ class KeypointSuggester:
             cx = (x1 + x2) / 2
             cy = (y1 + y2) / 2
             y_ground = y2  # Bottom of bounding box = ground contact
-            wheel_data.append((cx, cy, y_ground, conf))
+            radius = max(1.0, (y2 - y1) / 2.0)
+            wheel_data.append((cx, cy, y_ground, conf, radius))
         
         # Sort by X coordinate, then assign front/rear based on side heading.
         wheel_data.sort(key=lambda x: x[0])
@@ -732,8 +799,8 @@ class KeypointSuggester:
             rear_wheel = wheel_data[0]
             front_wheel = wheel_data[-1]
 
-        rear_cx, rear_cy, rear_ground, rear_conf = rear_wheel
-        front_cx, front_cy, front_ground, front_conf = front_wheel
+        rear_cx, rear_cy, rear_ground, rear_conf, rear_radius = rear_wheel
+        front_cx, front_cy, front_ground, front_conf, front_radius = front_wheel
         avg_conf = float(np.mean([rear_conf, front_conf]))
         
         return WheelDetection(
@@ -743,6 +810,8 @@ class KeypointSuggester:
             rear_ground=(rear_cx, rear_ground),
             confidence=avg_conf,
             source_detections=top_n,
+            front_radius_px=float(front_radius),
+            rear_radius_px=float(rear_radius),
         )
 
     @staticmethod
@@ -770,6 +839,8 @@ class KeypointSuggester:
             rear_ground=(float(rear_x), float(ground_y)),
             confidence=0.35,
             source_detections=0,
+            front_radius_px=float(abs(ground_y - center_y)),
+            rear_radius_px=float(abs(ground_y - center_y)),
         )
     
     @staticmethod
@@ -1214,6 +1285,23 @@ def main():
         default=0.08,
         help="Minimum CLIP left/right margin before using left-looking assignment",
     )
+    parser.add_argument(
+        "--reject-non-side",
+        action="store_true",
+        help="Reject obvious non-lateral candidates before writing LabelMe JSON",
+    )
+    parser.add_argument(
+        "--side-min-wheelbase-ratio",
+        type=float,
+        default=0.32,
+        help="Minimum detected wheelbase/image-width ratio for --reject-non-side",
+    )
+    parser.add_argument(
+        "--side-min-wheelbase-to-radius",
+        type=float,
+        default=4.0,
+        help="Minimum wheelbase/radius ratio for --reject-non-side",
+    )
     
     args = parser.parse_args()
     
@@ -1235,6 +1323,12 @@ def main():
             min_confidence=args.orientation_min_confidence,
             min_margin=args.orientation_min_margin,
         )
+    side_view_gate = None
+    if args.reject_non_side:
+        side_view_gate = SideViewGate(
+            min_wheelbase_ratio=args.side_min_wheelbase_ratio,
+            min_wheelbase_to_radius=args.side_min_wheelbase_to_radius,
+        )
 
     # Initialize suggester
     try:
@@ -1243,6 +1337,7 @@ def main():
             priors=priors,
             priority_config=priority_config,
             orientation_classifier=orientation_classifier,
+            side_view_gate=side_view_gate,
         )
     except FileNotFoundError as e:
         logger.error(str(e))

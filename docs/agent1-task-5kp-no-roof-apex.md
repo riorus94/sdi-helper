@@ -38,6 +38,7 @@ python scripts/suggest_keypoints.py \
   --priority-config config/agent1_keypoint_priority_5kp_no_roof_apex.json \
   --phase-only phase1 \
   --orientation-classifier clip \
+  --reject-non-side \
   --overwrite
 ```
 
@@ -45,6 +46,11 @@ The CLIP orientation option prompts for left-looking vs right-looking side
 profiles before assigning detected wheel boxes to front/rear labels. If CLIP is
 not confident enough, Agent 1 keeps the conservative right-looking assignment
 and records the CLIP score in the quality report for human review.
+
+The non-side gate rejects obvious front/three-quarter candidates before writing
+LabelMe JSON, based on detected wheel spacing and wheel size. Rejected images
+are reported as `rejected_non_side_view` and should not be used for pose
+training unless manually promoted.
 
 ## 9KP Upgrade Path
 
@@ -58,6 +64,7 @@ python scripts/suggest_keypoints.py \
   --priority-config config/agent1_keypoint_priority_9kp_side.json \
   --phase-only phase1 \
   --orientation-classifier clip \
+  --reject-non-side \
   --quality-report logs/agent1_9kp_side_quality.csv \
   --overwrite
 ```
