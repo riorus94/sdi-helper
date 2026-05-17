@@ -100,6 +100,44 @@ Stage Stanford-only side candidates:
   --limit 300
 ```
 
+For the full raw Stanford Cars download, first create a bounded raw candidate
+pool:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\filter_stanford_raw.py `
+  --raw-root C:\Users\Admin\Downloads\stanford-cars-dataset `
+  --output-root yolo_training\stanford_raw_filter `
+  --limit 1000
+```
+
+Then run Agent 1 side gate:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\suggest_keypoints.py `
+  --image-dir yolo_training\stanford_raw_filter\images `
+  --output yolo_training\stanford_raw_filter\labelme_json_9kp `
+  --priority-config config\agent1_keypoint_priority_9kp_side.json `
+  --phase-only phase1 `
+  --reject-non-side `
+  --quality-report yolo_training\stanford_raw_filter\agent1_quality_report.csv `
+  --overwrite
+```
+
+Finally stage only the best Agent 1 rows:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\stage_agent1_quality_subset.py `
+  --report yolo_training\stanford_raw_filter\agent1_quality_report.csv `
+  --image-dir yolo_training\stanford_raw_filter\images `
+  --json-dir yolo_training\stanford_raw_filter\labelme_json_9kp `
+  --output-root yolo_training\side_view_dataset\subsets\stanford_raw_side_review_low `
+  --review-priority REVIEW_LOW `
+  --limit 300
+```
+
+In the first local run, 1000 raw Stanford candidates produced 897 Agent 1
+successes, 103 non-side rejections, and 80 `REVIEW_LOW` side-view candidates.
+
 Before labeling, inspect:
 
 ```text

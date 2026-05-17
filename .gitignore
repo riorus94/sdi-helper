@@ -41,6 +41,7 @@ yolo_training/**/review_queue/
 yolo_training/**/reports/*.csv
 yolo_training/**/annotation_batches/
 yolo_training/**/subsets/
+yolo_training/stanford_raw_filter/
 yolo_training/**/images/all/
 yolo_training/**/images/train/
 yolo_training/**/images/val/
