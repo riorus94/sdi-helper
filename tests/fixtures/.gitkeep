@@ -1,0 +1,5 @@
+# Drop sample images here for adapter tests:
+#   sample_car.jpg              - should pass all filters
+#   sample_logo.jpg             - rejected by vector / car-presence filter
+#   sample_cartoon.jpg          - rejected by real-photo CLIP filter
+#   sample_face_with_car.jpg    - rejected by face detector
