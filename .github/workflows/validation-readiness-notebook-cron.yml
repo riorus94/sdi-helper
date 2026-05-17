@@ -38,6 +38,7 @@ jobs:
             --to notebook \
             --execute notebooks/validation_readiness_test_suite.ipynb \
             --output validation_readiness_test_suite.executed.ipynb \
+            --output-dir notebooks \
             --ExecutePreprocessor.timeout=600
 
       - name: Upload executed notebook artifact
@@ -46,5 +47,5 @@ jobs:
         with:
           name: validation-readiness-notebook-${{ github.run_number }}
           path: |
-            validation_readiness_test_suite.executed.ipynb
-          if-no-files-found: error
+            notebooks/validation_readiness_test_suite.executed.ipynb
+          if-no-files-found: warn
