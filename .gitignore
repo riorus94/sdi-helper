@@ -36,15 +36,24 @@ dataset_raw/
 yolo_training/runs/
 yolo_training/**/pose_dataset/
 yolo_training/**/labels_pose/
+yolo_training/**/labels_pose_*/
 yolo_training/**/labelme_json_stanford_screening/
+yolo_training/**/labelme_json_stanford_raw_low_9kp/
 yolo_training/**/review_queue/
 yolo_training/**/reports/*.csv
 yolo_training/**/annotation_batches/
 yolo_training/**/subsets/
+yolo_training/**/backups/
+yolo_training/**/rejected_non_side/
+yolo_training/**/training_references/
 yolo_training/stanford_raw_filter/
 yolo_training/**/images/all/
 yolo_training/**/images/train/
 yolo_training/**/images/val/
+
+# Local test temp artifacts
+tests/_pytest_cache/
+tests/_pytest_tmp/
 
 # Generated local outputs
 contact_sheet.html
