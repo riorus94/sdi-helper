@@ -1,0 +1,4 @@
+image,json_path,status,orientation,warning_count,warnings,missing_keypoints,duplicate_keypoints,wheelbase_px,wheel_diameter_px,wheelbase_ratio,front_overhang_ratio,rear_overhang_ratio,front_outside_wheel,rear_outside_wheel,avg_confidence
+stanford_raw_00626_cars_test_00640.jpg,yolo_training\annotation_workspace_hardneg\stanford_raw_00626_cars_test_00640.json,VALID,left-looking,0,,,,444.286,110.000,4.039,0.935,1.078,True,True,
+stanford_raw_00969_cars_test_00989.jpg,yolo_training\annotation_workspace_hardneg\stanford_raw_00969_cars_test_00989.json,VALID,left-looking,0,,,,207.143,87.755,2.360,1.779,0.674,True,True,
+stanford_raw_00987_cars_test_01008.jpg,yolo_training\annotation_workspace_hardneg\stanford_raw_00987_cars_test_01008.json,VALID,right-looking,0,,,,103.261,42.935,2.405,0.570,2.203,True,True,
