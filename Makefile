@@ -52,3 +52,12 @@ build-dataset:
 
 inspect:
 	poetry run python -m sdi_helper.interfaces.cli.inspect_state
+
+# Regenerate the 41 corrected 7KP YOLO pose labels from LabelMe JSON source.
+# Keypoint order must match dataset_pose.yaml: fw_c, fw_g, rw_c, rw_g, g_ref, fb, rb
+gen-7kp-labels:
+	poetry run python yolo_training/labelme_to_yolo_pose.py \
+		--input  yolo_training/side_view_dataset/labelme_json_7kp_bumper_corrected_valid_20260524 \
+		--output yolo_training/side_view_dataset/labels_pose_7kp_bumper_corrected_valid_20260524 \
+		--img-dir yolo_training/side_view_dataset/pose_dataset/images/train \
+		--keypoints "front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground,ground_ref,front_bumper,rear_bumper"
