@@ -300,7 +300,7 @@ def main(argv: list[str] | None = None) -> None:
         else:
             skipped += 1
 
-    print(f"\nDone: {ok} converted, {skipped} skipped → {args.output}")
+    print(f"\nDone: {ok} converted, {skipped} skipped -> {args.output}")
     print(f"Keypoint order ({len(kp_order)}): {', '.join(kp_order)}")
 
 

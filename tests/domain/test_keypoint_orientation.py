@@ -1,5 +1,6 @@
 from sdi_helper.domain.geometry.keypoint_heuristics import (
     KeypointEstimate,
+    KeypointPrior,
     WheelDetection,
     estimate_keypoints,
     infer_orientation_from_x,
@@ -68,3 +69,67 @@ def test_estimate_keypoints_mirrors_non_wheel_points_for_left_looking_views() ->
     assert keypoints["fender_arch_front"].x < keypoints["fender_arch_rear"].x
     assert keypoints["ground_ref"].x == 200.0
     assert keypoints["ground_ref"].y == 500.0
+
+
+def test_estimate_keypoints_swaps_inverted_front_rear_pairs_for_right_looking_views() -> None:
+    wheels = WheelDetection(
+        front_center=(300.0, 450.0),
+        front_ground=(300.0, 500.0),
+        rear_center=(100.0, 450.0),
+        rear_ground=(100.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+    stale_priors = {
+        "body_waist_front": KeypointPrior(x_norm=-0.10, y_norm=-2.0, confidence=0.8),
+        "body_waist_rear": KeypointPrior(x_norm=0.90, y_norm=-2.0, confidence=0.8),
+        "panel_front": KeypointPrior(x_norm=-0.20, y_norm=-1.0, confidence=0.8),
+        "panel_rear": KeypointPrior(x_norm=0.80, y_norm=-1.0, confidence=0.8),
+    }
+
+    keypoints = estimate_keypoints(wheels, learned_priors=stale_priors)
+
+    assert keypoints["body_waist_front"].x > keypoints["body_waist_rear"].x
+    assert keypoints["panel_front"].x > keypoints["panel_rear"].x
+
+
+def test_estimate_keypoints_swaps_inverted_front_rear_pairs_for_left_looking_views() -> None:
+    wheels = WheelDetection(
+        front_center=(100.0, 450.0),
+        front_ground=(100.0, 500.0),
+        rear_center=(300.0, 450.0),
+        rear_ground=(300.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+    stale_priors = {
+        "body_waist_front": KeypointPrior(x_norm=0.90, y_norm=-2.0, confidence=0.8),
+        "body_waist_rear": KeypointPrior(x_norm=-0.10, y_norm=-2.0, confidence=0.8),
+        "panel_front": KeypointPrior(x_norm=0.80, y_norm=-1.0, confidence=0.8),
+        "panel_rear": KeypointPrior(x_norm=-0.20, y_norm=-1.0, confidence=0.8),
+    }
+
+    keypoints = estimate_keypoints(wheels, learned_priors=stale_priors)
+
+    assert keypoints["body_waist_front"].x < keypoints["body_waist_rear"].x
+    assert keypoints["panel_front"].x < keypoints["panel_rear"].x
+
+
+def test_estimate_keypoints_ignores_body_end_priors_inside_wheelbase() -> None:
+    wheels = WheelDetection(
+        front_center=(300.0, 450.0),
+        front_ground=(300.0, 500.0),
+        rear_center=(100.0, 450.0),
+        rear_ground=(100.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+    contaminated_priors = {
+        "front_bumper": KeypointPrior(x_norm=-0.40, y_norm=-2.0, confidence=0.8),
+        "rear_bumper": KeypointPrior(x_norm=0.08, y_norm=-2.0, confidence=0.8),
+    }
+
+    keypoints = estimate_keypoints(wheels, learned_priors=contaminated_priors)
+
+    assert keypoints["front_bumper"].x > wheels.front_center[0]
+    assert keypoints["rear_bumper"].x < wheels.rear_center[0]

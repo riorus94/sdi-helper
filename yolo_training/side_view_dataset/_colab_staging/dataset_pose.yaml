@@ -1,0 +1,14 @@
+﻿# 7KP body-end side-view pose dataset â€” packaged for Google Colab
+# Keypoints: front_wheel_center, front_wheel_ground, rear_wheel_center,
+#             rear_wheel_ground, ground_ref, front_bumper, rear_bumper
+path: /content/sdi_7kp_dataset
+train: images/train
+val:   images/val
+
+kpt_shape: [7, 3]
+# flip_idx maps: fw_c<->rw_c, fw_g<->rw_g, front_bumper<->rear_bumper, ground_ref stays
+flip_idx: [2, 3, 0, 1, 4, 6, 5]
+
+nc: 1
+names:
+  0: vehicle

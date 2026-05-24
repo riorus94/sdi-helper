@@ -1052,6 +1052,7 @@ def learn_priors_from_labelme(
         rgx, rgy = pts["rear_wheel_ground"]
 
         wheelbase = abs(fx - rx)
+        direction = 1.0 if fx >= rx else -1.0
         radius = (abs(fgy - fy) + abs(rgy - ry)) / 2.0
         if wheelbase < 20 or radius < 8:
             continue
@@ -1060,8 +1061,14 @@ def learn_priors_from_labelme(
             if label in required or label not in pts:
                 continue
             x, y = pts[label]
-            x_norm = (x - rgx) / wheelbase
+            # Canonicalize left-looking/right-looking into one reference frame
+            # so front/rear priors do not cancel each other during averaging.
+            x_norm = direction * (x - rgx) / wheelbase
             y_norm = (y - rgy) / radius
+            if label == "front_bumper" and x_norm <= 1.0:
+                continue
+            if label == "rear_bumper" and x_norm >= 0.0:
+                continue
             accum[label].append((x_norm, y_norm))
 
     priors: Dict[str, KeypointPrior] = {}

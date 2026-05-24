@@ -39,6 +39,9 @@ yolo_training/**/labels_pose/
 yolo_training/**/labels_pose_*/
 yolo_training/**/labelme_json_stanford_screening/
 yolo_training/**/labelme_json_stanford_raw_low_9kp/
+yolo_training/**/labelme_json_7kp_bumper*/
+yolo_training/**/rebuild_7kp_body_end_report*.csv
+yolo_training/**/validation_7kp_body_end_report*.csv
 yolo_training/**/review_queue/
 yolo_training/**/reports/*.csv
 yolo_training/**/annotation_batches/

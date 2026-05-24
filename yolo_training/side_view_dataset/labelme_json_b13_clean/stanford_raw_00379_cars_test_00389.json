@@ -1,0 +1,278 @@
+{
+  "version": "6.2.0",
+  "flags": {
+    "agent1_generated": true
+  },
+  "shapes": [
+    {
+      "label": "front_wheel_center",
+      "points": [
+        [
+          753.412841796875,
+          644.4509887695312
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.921"
+    },
+    {
+      "label": "front_wheel_ground",
+      "points": [
+        [
+          753.412841796875,
+          730.1185913085938
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.921"
+    },
+    {
+      "label": "rear_wheel_center",
+      "points": [
+        [
+          184.31686401367188,
+          640.1229248046875
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.921"
+    },
+    {
+      "label": "rear_wheel_ground",
+      "points": [
+        [
+          184.31686401367188,
+          720.4136962890625
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.921"
+    },
+    {
+      "label": "ground_ref",
+      "points": [
+        [
+          468.86485290527344,
+          725.26611328125
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.921"
+    },
+    {
+      "label": "front_bumper",
+      "points": [
+        [
+          985.9998935865319,
+          487.3657668093417
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.928"
+    },
+    {
+      "label": "rear_bumper",
+      "points": [
+        [
+          6.165079664147413,
+          478.5381937229887
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.927"
+    },
+    {
+      "label": "roof_apex",
+      "points": [
+        [
+          525.7744506835937,
+          153.68350414519614
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.931"
+    },
+    {
+      "label": "hood_edge",
+      "points": [
+        [
+          926.6159654700238,
+          352.30389858814
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.925"
+    },
+    {
+      "label": "windshield_base",
+      "points": [
+        [
+          778.1561451787534,
+          303.75224661319817
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.931"
+    },
+    {
+      "label": "rear_glass_base",
+      "points": [
+        [
+          369.3967733101223,
+          282.56607120595083
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.930"
+    },
+    {
+      "label": "side_window_top_front",
+      "points": [
+        [
+          743.5155204441236,
+          169.5731357006316
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.928"
+    },
+    {
+      "label": "side_window_top_rear",
+      "points": [
+        [
+          379.2940946628736,
+          164.27659184881986
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.925"
+    },
+    {
+      "label": "fender_arch_front",
+      "points": [
+        [
+          753.412841796875,
+          471.47613525390625
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.934"
+    },
+    {
+      "label": "fender_arch_rear",
+      "points": [
+        [
+          183.61810853535763,
+          525.022198297602
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.919"
+    },
+    {
+      "label": "body_waist_front",
+      "points": [
+        [
+          880.0985551120924,
+          361.131471674493
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.927"
+    },
+    {
+      "label": "body_waist_rear",
+      "points": [
+        [
+          68.51820418648097,
+          370.8418020694814
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.924"
+    },
+    {
+      "label": "panel_front",
+      "points": [
+        [
+          941.4619474991508,
+          672.744801622756
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.921"
+    },
+    {
+      "label": "panel_rear",
+      "points": [
+        [
+          206.66348552179053,
+          607.0066574336497
+        ]
+      ],
+      "shape_type": "point",
+      "group_id": null,
+      "flags": {},
+      "mask": null,
+      "description": "confidence=0.919"
+    }
+  ],
+  "imagePath": "stanford_raw_00379_cars_test_00389.jpg",
+  "imageData": null,
+  "imageHeight": 800,
+  "imageWidth": 1200
+}

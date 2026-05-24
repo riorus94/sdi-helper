@@ -152,6 +152,28 @@ KEYPOINT_NAMES = [
 ]
 
 
+ORIENTATION_LOCKED_PAIRS = [
+    ("front_bumper", "rear_bumper"),
+    ("fender_arch_front", "fender_arch_rear"),
+    ("side_window_top_front", "side_window_top_rear"),
+    ("body_waist_front", "body_waist_rear"),
+    ("panel_front", "panel_rear"),
+]
+
+
+def _is_plausible_prior(kp_name: str, prior: KeypointPrior, template_prior: KeypointPrior) -> bool:
+    """Reject stale learned priors that contradict canonical side-view geometry."""
+    if abs(prior.x_norm - template_prior.x_norm) > 0.8:
+        return False
+    if abs(prior.y_norm - template_prior.y_norm) > 1.0:
+        return False
+    if kp_name == "front_bumper" and prior.x_norm <= 1.0:
+        return False
+    if kp_name == "rear_bumper" and prior.x_norm >= 0.0:
+        return False
+    return True
+
+
 def estimate_keypoints(
     wheels: WheelDetection,
     learned_priors: Dict[str, KeypointPrior] | None = None,
@@ -247,9 +269,7 @@ def estimate_keypoints(
             if prior is not None:
                 # Guard against malformed priors by comparing to template-normalized ranges.
                 t = template_priors.get(kp_name)
-                if t is not None and (
-                    abs(prior.x_norm - t.x_norm) > 0.8 or abs(prior.y_norm - t.y_norm) > 1.0
-                ):
+                if t is not None and not _is_plausible_prior(kp_name, prior, t):
                     prior = None
 
             if prior is not None:
@@ -271,8 +291,37 @@ def estimate_keypoints(
             estimates[kp_name] = KeypointEstimate(
                 x=est_x, y=est_y, confidence=conf
             )
-    
+
+    _enforce_orientation_locked_pairs(estimates, wheels)
     return estimates
+
+
+def _enforce_orientation_locked_pairs(
+    estimates: Dict[str, KeypointEstimate],
+    wheels: WheelDetection,
+) -> None:
+    """Swap front/rear semantic pairs when their x-order contradicts wheel heading."""
+    orientation = infer_orientation_from_x(
+        wheels.front_center[0],
+        wheels.rear_center[0],
+    )
+    if orientation == "ambiguous":
+        return
+
+    for front_label, rear_label in ORIENTATION_LOCKED_PAIRS:
+        front_est = estimates.get(front_label)
+        rear_est = estimates.get(rear_label)
+        if front_est is None or rear_est is None:
+            continue
+
+        should_swap = False
+        if orientation == "right-looking" and front_est.x < rear_est.x:
+            should_swap = True
+        elif orientation == "left-looking" and front_est.x > rear_est.x:
+            should_swap = True
+
+        if should_swap:
+            estimates[front_label], estimates[rear_label] = rear_est, front_est
 
 
 def _estimate_keypoint_confidence(

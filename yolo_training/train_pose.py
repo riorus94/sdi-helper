@@ -97,6 +97,14 @@ def _source_dirs() -> list[tuple[pathlib.Path, str, bool]]:
     if os.getenv("POSE_ALLOW_LEGACY_SOURCE", "0") == "1":
         # Legacy UUID-named side images from scrape pipeline.
         dirs.append((LEGACY_SOURCE_IMAGE_DIR, "train", False))
+
+    extra_dirs = os.getenv("POSE_EXTRA_IMAGE_DIRS", "").strip()
+    if extra_dirs:
+        for raw_dir in extra_dirs.split(os.pathsep):
+            candidate = raw_dir.strip()
+            if not candidate:
+                continue
+            dirs.append((pathlib.Path(candidate), "train", False))
     return dirs
 
 

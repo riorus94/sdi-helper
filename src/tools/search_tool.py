@@ -1,2 +1,0 @@
-"""Search tool integration."""
-
