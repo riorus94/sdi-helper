@@ -1,0 +1,65 @@
+name: Side-View Holdout Gate
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_path:
+        description: Candidate YOLO pose weights path in the checked-out workspace
+        required: true
+        default: yolo_training/runs/candidate/weights/best.pt
+      manifest_path:
+        description: Fixed side-view holdout manifest path
+        required: true
+        default: yolo_training/runs/side_view_pose_7kp_bumper_oos_20260524/holdout_manifest.txt
+      device:
+        description: Inference device
+        required: true
+        default: cpu
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdi-helper-side-view-holdout-gate
+  cancel-in-progress: false
+
+jobs:
+  side-view-holdout-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run side-view holdout gate
+        env:
+          SIDE_HOLDOUT_MODEL: ${{ inputs.model_path }}
+          SIDE_HOLDOUT_MANIFEST: ${{ inputs.manifest_path }}
+          SIDE_HOLDOUT_OUTPUT: yolo_training/runs/side_view_holdout_gate_${{ github.run_number }}
+          SIDE_HOLDOUT_DEVICE: ${{ inputs.device }}
+          SIDE_HOLDOUT_PYTHON: python
+        run: |
+          make side-holdout-gate
+
+      - name: Upload holdout artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: side-view-holdout-gate-${{ github.run_number }}
+          path: yolo_training/runs/side_view_holdout_gate_${{ github.run_number }}/
+          if-no-files-found: ignore

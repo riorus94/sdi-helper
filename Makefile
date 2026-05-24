@@ -1,11 +1,16 @@
 .PHONY: install test test-domain test-fast test-slow lint type clean \
 	scrape scrape-run scrape-smoke scrape-side scrape-debug \
-	build-dataset inspect
+	build-dataset inspect side-holdout-gate
 
 # Optional CLI args passthrough for scrape-run.
 # Example:
 #   make scrape-run SCRAPE_ARGS='--query-contains "side view" --max-queries 10 --max-results 80'
 SCRAPE_ARGS ?=
+SIDE_HOLDOUT_MODEL ?= ../vehicle-sdi-system/cv_service/models/best.pt
+SIDE_HOLDOUT_MANIFEST ?= yolo_training/runs/side_view_pose_7kp_bumper_oos_20260524/holdout_manifest.txt
+SIDE_HOLDOUT_OUTPUT ?= yolo_training/runs/side_view_pose_7kp_pre_promotion_gate
+SIDE_HOLDOUT_DEVICE ?= cpu
+SIDE_HOLDOUT_PYTHON ?= poetry run python
 
 install:
 	poetry install
@@ -61,3 +66,12 @@ gen-7kp-labels:
 		--output yolo_training/side_view_dataset/labels_pose_7kp_bumper_corrected_valid_20260524 \
 		--img-dir yolo_training/side_view_dataset/pose_dataset/images/train \
 		--keypoints "front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground,ground_ref,front_bumper,rear_bumper"
+
+# Mandatory pre-promotion gate for side-view 7KP pose candidates.
+# Fails nonzero if any holdout image violates the body-end geometry rule.
+side-holdout-gate:
+	$(SIDE_HOLDOUT_PYTHON) scripts/evaluate_7kp_body_end_model.py \
+		--model "$(SIDE_HOLDOUT_MODEL)" \
+		--manifest "$(SIDE_HOLDOUT_MANIFEST)" \
+		--output-dir "$(SIDE_HOLDOUT_OUTPUT)" \
+		--device "$(SIDE_HOLDOUT_DEVICE)"
