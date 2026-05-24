@@ -24,3 +24,40 @@ Examples:
 | Run tests | `..\rtk.cmd pytest tests/` | `pytest tests/` |
 | TypeScript check | `..\rtk.cmd tsc` | `npx tsc --noEmit` |
 | Lint | `..\rtk.cmd lint` | project lint command |
+
+---
+
+## Git Branch & PR Workflow
+
+All non-trivial changes (features, fixes, chores, cleanup) MUST go through a feature branch and pull request. Never push directly to `master`.
+
+### Branch naming
+
+| Type | Pattern | Example |
+|---|---|---|
+| Feature | `feat/<short-desc>` | `feat/7kp-body-end-holdout-eval` |
+| Bug fix | `fix/<short-desc>` | `fix/dataset-yaml-val-path` |
+| Chore / cleanup | `chore/<short-desc>` | `chore/remove-orphaned-dirs` |
+| Training experiment | `exp/<short-desc>` | `exp/7kp-colab-gpu-150ep` |
+
+### Workflow
+
+```
+# 1. Create branch before starting any work
+git checkout -b chore/my-task
+
+# 2. Make changes, commit
+git add -A
+git commit -m "chore: describe what changed and why"
+
+# 3. Push and open PR
+git push -u origin chore/my-task
+# Then open PR targeting master
+```
+
+### Rules
+
+- Run `poetry run pytest tests/ -q --ignore=tests/_pytest_cache --ignore=tests/_pytest_tmp` before pushing — all tests must pass.
+- PR body must list: what changed, why, and test result line (e.g. `66 passed, 22 skipped`).
+- Squash-merge into `master` when approved.
+- Delete the feature branch after merge.
