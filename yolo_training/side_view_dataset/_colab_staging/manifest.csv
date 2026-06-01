@@ -29,10 +29,11 @@ stanford_raw_00414_cars_test_00424,train
 stanford_raw_00478_cars_test_00489,train
 stanford_raw_00562_cars_test_00575,train
 stanford_raw_00573_cars_test_00586,train
+stanford_raw_00626_cars_test_00640,train
 stanford_raw_00639_cars_test_00653,train
 stanford_raw_00690_cars_test_00704,train
 stanford_raw_00691_cars_test_00705,train
-stanford_raw_00710_cars_test_00724,val
+stanford_raw_00710_cars_test_00724,train
 stanford_raw_00719_cars_test_00733,val
 stanford_raw_00726_cars_test_00740,val
 stanford_raw_00735_cars_test_00749,val
@@ -40,4 +41,5 @@ stanford_raw_00794_cars_test_00810,val
 stanford_raw_00820_cars_test_00837,val
 stanford_raw_00895_cars_test_00913,val
 stanford_raw_00929_cars_test_00949,val
+stanford_raw_00987_cars_test_01008,val
 

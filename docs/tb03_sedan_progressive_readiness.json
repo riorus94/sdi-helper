@@ -1,0 +1,21 @@
+{
+  "status": "FAIL",
+  "target_rung": "9KP",
+  "dataset_dir": "yolo_training\\side_view_dataset\\labels_pose_9kp_raw_low",
+  "train_labels": 0,
+  "val_labels": 0,
+  "holdout_labels": 0,
+  "holdout_manifest_rows": 0,
+  "body_style_manifest": "yolo_training\\side_view_dataset\\label_sheet.csv",
+  "accepted_manifest_rows": 0,
+  "sedan_manifest_rows": 0,
+  "blocking_reasons": [
+    "missing conversion_summary.json",
+    "missing dataset_pose.yaml",
+    "dataset_pose.yaml kpt_shape None does not match [9, 3]",
+    "dataset_pose.yaml flip_idx does not match target rung",
+    "train labels 0 below required 1",
+    "holdout labels 0 below required 1",
+    "missing holdout_manifest.txt"
+  ]
+}

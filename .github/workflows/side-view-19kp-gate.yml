@@ -1,0 +1,65 @@
+name: Side-View 19KP Gate
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_path:
+        description: candidate model weights path in the checked-out workspace
+        required: true
+        default: yolo_training/runs/side_view_pose_19kp_candidate/weights/best.pt
+      prediction_summary:
+        description: prediction_summary.csv path in the checked-out workspace
+        required: true
+        default: yolo_training/runs/side_view_pose_19kp_candidate/prediction_summary.csv
+      holdout_manifest:
+        description: holdout manifest path in the checked-out workspace
+        required: true
+        default: yolo_training/runs/side_view_pose_19kp_candidate/holdout_manifest.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdi-helper-side-view-19kp-gate
+  cancel-in-progress: false
+
+jobs:
+  side-view-19kp-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run 19KP gate
+        env:
+          SIDE_19KP_MODEL: ${{ inputs.model_path }}
+          SIDE_19KP_SUMMARY: ${{ inputs.prediction_summary }}
+          SIDE_19KP_EVIDENCE: ${{ inputs.holdout_manifest }}
+          SIDE_19KP_DECISION: yolo_training/runs/side_view_19kp_gate_${{ github.run_number }}/gate_decision.json
+          SIDE_19KP_PYTHON: python
+        run: |
+          make side-19kp-gate
+
+      - name: Upload 19KP gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: side-view-19kp-gate-${{ github.run_number }}
+          path: yolo_training/runs/side_view_19kp_gate_${{ github.run_number }}/
+          if-no-files-found: ignore

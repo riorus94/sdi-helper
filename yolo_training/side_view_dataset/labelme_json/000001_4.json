@@ -269,20 +269,6 @@
       "shape_type": "point",
       "flags": {},
       "mask": null
-    },
-    {
-      "label": "ground_ref",
-      "points": [
-        [
-          416.9230769230769,
-          449.1923076923077
-        ]
-      ],
-      "group_id": null,
-      "description": "",
-      "shape_type": "point",
-      "flags": {},
-      "mask": null
     }
   ],
   "imagePath": "000001_4.jpg",

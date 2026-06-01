@@ -71,6 +71,74 @@ def test_estimate_keypoints_mirrors_non_wheel_points_for_left_looking_views() ->
     assert keypoints["ground_ref"].y == 500.0
 
 
+def test_estimate_keypoints_uses_wheel_diameter_labeling_priors() -> None:
+    wheels = WheelDetection(
+        front_center=(300.0, 450.0),
+        front_ground=(300.0, 500.0),
+        rear_center=(100.0, 450.0),
+        rear_ground=(100.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+
+    keypoints = estimate_keypoints(wheels)
+
+    assert keypoints["front_bumper"].x == 425.0
+    assert keypoints["front_bumper"].y == 450.0
+    assert keypoints["rear_bumper"].x == -40.0
+    assert keypoints["rear_bumper"].y == 450.0
+    assert keypoints["roof_apex"].x == 200.0
+    assert keypoints["roof_apex"].y == 280.0
+    assert keypoints["hood_edge"].x == 300.0
+    assert keypoints["hood_edge"].y == 350.0
+
+
+def test_estimate_keypoints_uses_wheel_diameter_labeling_priors_for_left_looking_views() -> None:
+    wheels = WheelDetection(
+        front_center=(100.0, 450.0),
+        front_ground=(100.0, 500.0),
+        rear_center=(300.0, 450.0),
+        rear_ground=(300.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+
+    keypoints = estimate_keypoints(wheels)
+
+    assert keypoints["front_bumper"].x == -25.0
+    assert keypoints["front_bumper"].y == 450.0
+    assert keypoints["rear_bumper"].x == 440.0
+    assert keypoints["rear_bumper"].y == 450.0
+    assert keypoints["roof_apex"].x == 200.0
+    assert keypoints["roof_apex"].y == 280.0
+    assert keypoints["hood_edge"].x == 100.0
+    assert keypoints["hood_edge"].y == 350.0
+
+
+def test_estimate_keypoints_ratio_labels_ignore_learned_priors() -> None:
+    wheels = WheelDetection(
+        front_center=(300.0, 450.0),
+        front_ground=(300.0, 500.0),
+        rear_center=(100.0, 450.0),
+        rear_ground=(100.0, 500.0),
+        confidence=0.9,
+        source_detections=2,
+    )
+    stale_priors = {
+        "front_bumper": KeypointPrior(x_norm=4.0, y_norm=-9.0, confidence=0.8),
+        "rear_bumper": KeypointPrior(x_norm=-4.0, y_norm=-9.0, confidence=0.8),
+        "roof_apex": KeypointPrior(x_norm=0.2, y_norm=-9.0, confidence=0.8),
+        "hood_edge": KeypointPrior(x_norm=0.6, y_norm=-9.0, confidence=0.8),
+    }
+
+    keypoints = estimate_keypoints(wheels, learned_priors=stale_priors)
+
+    assert keypoints["front_bumper"].x == 425.0
+    assert keypoints["rear_bumper"].x == -40.0
+    assert keypoints["roof_apex"].y == 280.0
+    assert keypoints["hood_edge"].y == 350.0
+
+
 def test_estimate_keypoints_swaps_inverted_front_rear_pairs_for_right_looking_views() -> None:
     wheels = WheelDetection(
         front_center=(300.0, 450.0),

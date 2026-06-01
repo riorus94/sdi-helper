@@ -10,21 +10,18 @@ Then trains YOLO with task='pose'.
 
 from __future__ import annotations
 
+import importlib
 import os
 import pathlib
 import shutil
 import sys
 import tempfile
 
-try:
-    import torch
-    from ultralytics import YOLO
-except ImportError:
-    print(
-        "ERROR: ultralytics is required for training.\\n"
-        "Install it with: pip install ultralytics>=8.0.0"
-    )
-    sys.exit(1)
+from sdi_helper.domain.geometry.side_view_keypoint_contract import (
+    CANONICAL_SIDE_VIEW_KP_ORDER,
+    derive_side_view_flip_idx,
+)
+
 
 HERE = pathlib.Path(__file__).parent
 PROJECT_ROOT = HERE.parent
@@ -37,27 +34,7 @@ LABELME_JSON_DIR = HERE / "side_view_dataset" / "labelme_json"
 POSE_LABEL_DIR = HERE / "side_view_dataset" / "labels_pose"
 POSE_DATASET_DIR = HERE / "side_view_dataset" / "pose_dataset"
 RUNS_DIR = HERE / "runs"
-CANONICAL_KP_ORDER = [
-    "roof_apex",
-    "side_window_top_front",
-    "side_window_top_rear",
-    "front_bumper",
-    "rear_bumper",
-    "front_wheel_center",
-    "front_wheel_ground",
-    "rear_wheel_center",
-    "rear_wheel_ground",
-    "fender_arch_front",
-    "fender_arch_rear",
-    "hood_edge",
-    "body_waist_front",
-    "body_waist_rear",
-    "panel_front",
-    "panel_rear",
-    "windshield_base",
-    "rear_glass_base",
-    "ground_ref",
-]
+CANONICAL_KP_ORDER = list(CANONICAL_SIDE_VIEW_KP_ORDER)
 
 
 def _selected_keypoints() -> list[str]:
@@ -247,31 +224,9 @@ def _build_pose_dataset(
     return train_count, val_count
 
 
-_FLIP_PAIRS = {
-    "front_wheel_center": "rear_wheel_center",
-    "front_wheel_ground": "rear_wheel_ground",
-    "front_bumper": "rear_bumper",
-    "fender_arch_front": "fender_arch_rear",
-    "side_window_top_front": "side_window_top_rear",
-    "body_waist_front": "body_waist_rear",
-    "panel_front": "panel_rear",
-}
-
-
 def _flip_idx_for_keypoints(kp_order: list[str]) -> list[int]:
     """Return YOLO flip_idx for the selected keypoint order."""
-    index = {name: i for i, name in enumerate(kp_order)}
-    flip_idx: list[int] = []
-    for name in kp_order:
-        target = _FLIP_PAIRS.get(name)
-        if target is None:
-            reverse_target = next(
-                (left for left, right in _FLIP_PAIRS.items() if right == name),
-                None,
-            )
-            target = reverse_target or name
-        flip_idx.append(index.get(target, index[name]))
-    return flip_idx
+    return list(derive_side_view_flip_idx(kp_order))
 
 
 def _write_dataset_pose_yaml(kp_order: list[str]) -> pathlib.Path:
@@ -299,6 +254,17 @@ names:
     mirror = HERE / "side_view_dataset" / "dataset_pose.yaml"
     mirror.write_text(content, encoding="utf-8")
     return tmp
+
+
+def _copy_best_model_to_output(best_weights: pathlib.Path, output_model: pathlib.Path) -> None:
+    """Copy the best training weights to a stable output path."""
+    if not best_weights.exists():
+        raise SystemExit(
+            f"Missing trained model weights: {best_weights}"
+        )
+    output_model.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(best_weights, output_model)
+    print(f"Saved output model: {output_model}")
 
 
 def _archive_labeled_candidate_images() -> int:
@@ -353,6 +319,7 @@ def _archive_labeled_candidate_images() -> int:
 
 def _runtime_train_config(train_count: int) -> dict:
     # Keep batch size realistic for small datasets to avoid unstable steps.
+    torch = importlib.import_module("torch")
     default_gpu_batch = max(2, min(8, train_count))
     default_cpu_batch = max(1, min(2, train_count))
 
@@ -506,6 +473,15 @@ def train() -> None:
     )
 
     model_weights = os.getenv("POSE_MODEL_WEIGHTS", "yolov8n-pose.pt")
+    try:
+        ultralytics = importlib.import_module("ultralytics")
+        YOLO = ultralytics.YOLO
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "ERROR: ultralytics is required for training.\n"
+            "Install it with: pip install ultralytics>=8.0.0"
+        ) from exc
+
     model = YOLO(model_weights)
 
     try:
@@ -529,8 +505,15 @@ def train() -> None:
 
     archived = _archive_labeled_candidate_images()
     best = RUNS_DIR / run_name / "weights" / "best.pt"
-    print("\\nPose training complete.")
+
+    output_model = os.getenv("POSE_OUTPUT_MODEL", "").strip()
+    if output_model:
+        _copy_best_model_to_output(best, pathlib.Path(output_model))
+
+    print("\nPose training complete.")
     print(f"  Best weights: {best}")
+    if output_model:
+        print(f"  Output model: {output_model}")
     print(f"  Archived labeled images: {archived}")
 
 

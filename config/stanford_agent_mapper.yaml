@@ -28,7 +28,15 @@ views:
     validation_agent: agent_2_front_view_validator
   rear:
     clean_subset: yolo_training/rear_view_dataset/subsets/stanford_rear_clean
-    status: planned
+    status: active
+    candidate_limit: 300
+    clip_gate: sdi_helper/infrastructure/models/rear_view_gate.py
+    filter_script: scripts/filter_stanford_rear.py
+    allowed_source_roots:
+      - dataset_raw/images/train/rear
+    aspect_bounds: [0.8, 2.0]
+    # Keypoint schema for rear-view is not yet defined.
+    # Labeling and validation agents are stubs until schema is confirmed.
     labeling_agent: agent_1_rear_keypoint_suggester
     validation_agent: agent_2_rear_view_validator
 
