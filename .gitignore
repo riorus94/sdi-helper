@@ -62,6 +62,10 @@ tests/_pytest_tmp/
 contact_sheet.html
 scrape.log
 
+# Agent skills (installed locally, not tracked)
+.claude/
+skills-lock.json
+
 # IDE
 .vscode/
 .idea/
