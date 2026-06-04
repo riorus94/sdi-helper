@@ -52,6 +52,33 @@ class PredictionSummary:
     confidences: dict[str, float]
 
 
+@dataclass
+class RunSummary:
+    total: int
+    passed: int
+    failed: int
+    taxonomy: dict[str, int]
+
+    @property
+    def pass_rate(self) -> float:
+        return self.passed / self.total if self.total else 0.0
+
+
+def summarize_run(summaries: list[PredictionSummary]) -> RunSummary:
+    """Aggregate per-image summaries into run totals and a failure taxonomy."""
+    passed = sum(1 for s in summaries if s.status == "PASS")
+    taxonomy: dict[str, int] = {}
+    for summary in summaries:
+        for warning in summary.warnings:
+            taxonomy[warning] = taxonomy.get(warning, 0) + 1
+    return RunSummary(
+        total=len(summaries),
+        passed=passed,
+        failed=len(summaries) - passed,
+        taxonomy=taxonomy,
+    )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate 7KP body-end pose predictions")
     parser.add_argument("--model", type=Path, required=True, help="YOLO pose model weights")
@@ -102,7 +129,7 @@ def _outside_wheel(
     return False
 
 
-def _summarize_prediction(
+def summarize_prediction(
     image_path: Path,
     result,
     *,
@@ -310,7 +337,7 @@ def main() -> int:
             device=args.device,
             verbose=False,
         )[0]
-        summary = _summarize_prediction(
+        summary = summarize_prediction(
             image_path,
             prediction,
             outside_margin_ratio=args.outside_margin_ratio,
@@ -324,13 +351,17 @@ def main() -> int:
     write_prediction_csv(results, args.output_dir / "prediction_summary.csv")
     write_contact_sheet(overlay_paths, args.output_dir / "bumper_review_contact_sheet.jpg")
 
-    passed = sum(1 for result in results if result.status == "PASS")
-    failed = len(results) - passed
-    print(f"Evaluated images: {len(results)}")
-    print(f"PASS: {passed}")
-    print(f"FAIL: {failed}")
+    run = summarize_run(results)
+    print(f"Evaluated images: {run.total}")
+    print(f"PASS: {run.passed}")
+    print(f"FAIL: {run.failed}")
+    print(f"Pass rate: {run.pass_rate:.3f}")
+    if run.taxonomy:
+        print("Failure taxonomy:")
+        for warning, count in sorted(run.taxonomy.items(), key=lambda kv: (-kv[1], kv[0])):
+            print(f"  {warning}: {count}")
     print(f"Output: {args.output_dir}")
-    return 0 if failed == 0 else 1
+    return 0 if run.failed == 0 else 1
 
 
 if __name__ == "__main__":
