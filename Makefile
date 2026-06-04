@@ -1,14 +1,36 @@
 .PHONY: install test test-domain test-fast test-slow lint type clean \
 	scrape scrape-run scrape-smoke scrape-side scrape-debug \
-	build-dataset inspect
+	build-dataset inspect side-holdout-gate side-19kp-evaluate side-19kp-gate \
+	b1-queue-build b1-19kp-accept
 
 # Optional CLI args passthrough for scrape-run.
 # Example:
 #   make scrape-run SCRAPE_ARGS='--query-contains "side view" --max-queries 10 --max-results 80'
 SCRAPE_ARGS ?=
+SIDE_HOLDOUT_MODEL ?= ../vehicle-sdi-system/cv_service/models/best.pt
+SIDE_HOLDOUT_MANIFEST ?= yolo_training/runs/side_view_pose_7kp_bumper_oos_20260524/holdout_manifest.txt
+SIDE_HOLDOUT_OUTPUT ?= yolo_training/runs/side_view_pose_7kp_pre_promotion_gate
+SIDE_HOLDOUT_DEVICE ?= cpu
+SIDE_HOLDOUT_PYTHON ?= poetry run python
+SIDE_19KP_SUMMARY ?= yolo_training/runs/side_view_pose_19kp_candidate/prediction_summary.csv
+SIDE_19KP_DECISION ?= yolo_training/runs/side_view_pose_19kp_candidate/gate_decision.json
+SIDE_19KP_EVIDENCE ?= yolo_training/runs/side_view_pose_19kp_candidate/holdout_manifest.txt
+SIDE_19KP_MODEL ?= yolo_training/runs/side_view_pose_19kp_candidate/weights/best.pt
+SIDE_19KP_MANIFEST ?= yolo_training/runs/side_view_pose_19kp_candidate/holdout_manifest.txt
+SIDE_19KP_OUTPUT ?= yolo_training/runs/side_view_pose_19kp_candidate
+SIDE_19KP_DEVICE ?= cpu
+SIDE_19KP_PYTHON ?= poetry run python
 
-install:
-	poetry install
+B1_AGENT_REPORT ?= yolo_training/side_view_dataset/b13_agent1_report.csv
+B1_VALIDATION_REPORT ?= yolo_training/side_view_dataset/b13_validation_report.csv
+B1_QUEUE_OUTPUT ?= yolo_training/side_view_dataset/b13_b1_verification_queue.csv
+B1_REVIEW_LOG ?= yolo_training/side_view_dataset/review_queue/b1_19kp_labeling_queue/manual_review_log.csv
+B1_DRAFT_JSON_DIR ?= yolo_training/side_view_dataset/review_queue/b1_19kp_labeling_queue/labelme_json_draft_19kp
+B1_ACCEPTED_JSON_DIR ?= yolo_training/side_view_dataset/labelme_json
+B1_ACCEPTANCE_REPORT ?= yolo_training/side_view_dataset/labelme_json/acceptance_report.csv
+B1_PYTHON ?= poetry run python
+
+
 
 test:
 	poetry run pytest
@@ -61,3 +83,45 @@ gen-7kp-labels:
 		--output yolo_training/side_view_dataset/labels_pose_7kp_bumper_corrected_valid_20260524 \
 		--img-dir yolo_training/side_view_dataset/pose_dataset/images/train \
 		--keypoints "front_wheel_center,front_wheel_ground,rear_wheel_center,rear_wheel_ground,ground_ref,front_bumper,rear_bumper"
+
+# Mandatory pre-promotion gate for side-view 7KP pose candidates.
+# Fails nonzero if any holdout image violates the body-end geometry rule.
+side-holdout-gate:
+	$(SIDE_HOLDOUT_PYTHON) scripts/evaluate_7kp_body_end_model.py \
+		--model "$(SIDE_HOLDOUT_MODEL)" \
+		--manifest "$(SIDE_HOLDOUT_MANIFEST)" \
+		--output-dir "$(SIDE_HOLDOUT_OUTPUT)" \
+		--device "$(SIDE_HOLDOUT_DEVICE)"
+
+# Mandatory pre-promotion decision gate for 19KP side-view candidates.
+# Fails nonzero if prediction_summary contains FAIL rows or evidence is missing.
+side-19kp-evaluate:
+	$(SIDE_19KP_PYTHON) scripts/evaluate_19kp_holdout.py \
+		--model "$(SIDE_19KP_MODEL)" \
+		--manifest "$(SIDE_19KP_MANIFEST)" \
+		--output-dir "$(SIDE_19KP_OUTPUT)" \
+		--device "$(SIDE_19KP_DEVICE)"
+
+side-19kp-gate:
+	$(SIDE_19KP_PYTHON) scripts/gate_side_view_19kp_candidate.py \
+		--prediction-summary "$(SIDE_19KP_SUMMARY)" \
+		--decision-out "$(SIDE_19KP_DECISION)" \
+		--candidate-model "$(SIDE_19KP_MODEL)" \
+		--evidence "$(SIDE_19KP_SUMMARY)" \
+		--evidence "$(SIDE_19KP_EVIDENCE)" \
+		--evidence "$(SIDE_19KP_MODEL)"
+
+# Build the B1 side-view verification queue from Agent 1 + validation reports.
+b1-queue-build:
+	$(B1_PYTHON) scripts/build_b1_verification_queue.py \
+		--agent-report "$(B1_AGENT_REPORT)" \
+		--validation-report "$(B1_VALIDATION_REPORT)" \
+		--output "$(B1_QUEUE_OUTPUT)"
+
+# Promote manually accepted B1 19KP draft labels into the canonical training set.
+b1-19kp-accept:
+	$(B1_PYTHON) scripts/accept_b1_19kp_labels.py \
+		--review-log "$(B1_REVIEW_LOG)" \
+		--draft-json-dir "$(B1_DRAFT_JSON_DIR)" \
+		--accepted-json-dir "$(B1_ACCEPTED_JSON_DIR)" \
+		--acceptance-report "$(B1_ACCEPTANCE_REPORT)"

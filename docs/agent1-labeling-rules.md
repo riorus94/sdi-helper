@@ -4,6 +4,10 @@ All side-view labeling work must follow this document. Do not create or train
 pose labels from image sets that skipped Agent 1 staging, filtering, and review
 rules.
 
+Related context: see `context_sedan_proportions.md` for the canonical D-based
+proportions, repeating-circle construction grid, and annotation conventions
+used by Agent 1 (hood/cabin/trunk priors, horizontal/vertical arrow rules).
+
 ## Current Committed Baseline
 
 These recent commits define the active labeling workflow:
@@ -134,6 +138,34 @@ Before converting old LabelMe JSON, repair it when needed:
 
 The 5KP converter also derives `ground_ref` during export, but source JSON
 should still be repaired so review and future exports remain consistent.
+
+## Wheel-Diameter Reference Rules
+
+Use wheel diameter as the geometric reference when Agent 1 generates draft
+labels and when humans review ambiguous side-view labels.
+
+```text
+wheel_radius_px = distance(front_wheel_center, front_wheel_ground)
+wheel_diameter_px = wheel_radius_px * 2
+
+front_bumper.x = front_wheel_center.x +/- (1.25 * wheel_diameter_px)
+rear_bumper.x  = rear_wheel_center.x  -/+ (1.40 * wheel_diameter_px)
+roof_apex.y    = ground_ref.y - (2.20 * wheel_diameter_px)
+hood_edge.y    = ground_ref.y - (1.50 * wheel_diameter_px)
+```
+
+Direction is semantic:
+
+- right-looking vehicle: front bumper is to the right of `front_wheel_center`,
+  rear bumper is to the left of `rear_wheel_center`
+- left-looking vehicle: front bumper is to the left of `front_wheel_center`,
+  rear bumper is to the right of `rear_wheel_center`
+
+These ratios are labeling priors, not replacements for visible truth. If the
+actual bumper tip, roof apex, or hood edge is clearly visible, place the label
+on the visible landmark. If the landmark is cropped, occluded, or ambiguous,
+use the ratio-derived point and mark the image for review instead of inventing
+a visually unsupported point.
 
 ## Review Gates
 

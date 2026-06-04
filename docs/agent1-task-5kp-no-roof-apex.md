@@ -72,6 +72,17 @@ python scripts/suggest_keypoints.py \
 The 9KP output should still go through human review, especially for
 `front_bumper` and `rear_bumper` on cropped or non-90-degree images.
 
+Use these wheel-diameter priors for 9KP bumper review:
+
+```text
+front_bumper = 1.25 * wheel_diameter from front_wheel_center
+rear_bumper  = 1.40 * wheel_diameter from rear_wheel_center
+```
+
+Apply direction from vehicle orientation: right-looking vehicles extend the
+front bumper to the right and rear bumper to the left; left-looking vehicles
+use the opposite direction. Prefer the visible bumper tip when it is clear.
+
 ## Validation Gate (Mandatory)
 After generation, verify every JSON contains only the 5 labels above.
 

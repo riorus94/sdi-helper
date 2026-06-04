@@ -46,10 +46,18 @@ Keypoint order (index 0–18) is FIXED — must match dataset.yaml kpt_shape:
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import pathlib
 import sys
 from PIL import Image
+
+from sdi_helper.domain.geometry.side_view_keypoint_contract import (
+    SIDE_VIEW_RUNGS,
+    SideViewRungContract,
+    get_side_view_rung_contract,
+    get_side_view_rung_schema,
+)
 
 # ---------------------------------------------------------------------------
 # Canonical keypoint order — must stay in sync with dataset_pose.yaml
@@ -85,16 +93,236 @@ FIVE_KP_NO_ROOF_ORDER: list[str] = [
 ]
 
 
+def _point_labels(data: dict) -> list[str]:
+    labels: list[str] = []
+    for shape in data.get("shapes", []):
+        if shape.get("shape_type") != "point":
+            continue
+        label = str(shape.get("label") or "").strip()
+        if label:
+            labels.append(label)
+    return labels
+
+
+def _validate_accepted_19kp_payload(data: dict) -> tuple[bool, str]:
+    labels = _point_labels(data)
+    if not labels:
+        return False, "missing_required: no point labels"
+
+    known = set(DEFAULT_KP_ORDER)
+    unknown = sorted(set(labels) - known)
+    if unknown:
+        return False, f"unknown_labels: {', '.join(unknown)}"
+
+    missing = [label for label in DEFAULT_KP_ORDER if label not in labels]
+    if missing:
+        return False, f"missing_required: {', '.join(missing)}"
+
+    duplicates = sorted({label for label in labels if labels.count(label) > 1})
+    if duplicates:
+        return False, f"duplicate_labels: {', '.join(duplicates)}"
+
+    return True, ""
+
+
+def _split_deterministic(
+    json_paths: list[pathlib.Path],
+    *,
+    val_fraction: float,
+) -> tuple[list[pathlib.Path], list[pathlib.Path]]:
+    sorted_paths = sorted(json_paths, key=lambda p: p.name)
+    val_count = int(round(len(sorted_paths) * val_fraction))
+    val_count = max(0, min(val_count, len(sorted_paths)))
+    val = sorted_paths[:val_count]
+    train = sorted_paths[val_count:]
+    return train, val
+
+
+def convert_accepted_19kp_dataset(
+    *,
+    input_dir: pathlib.Path,
+    img_dir: pathlib.Path,
+    output_dir: pathlib.Path,
+    val_fraction: float = 0.2,
+    kp_order: list[str] | None = None,
+    target_rung: str = "19KP",
+) -> dict[str, int | str]:
+    if kp_order is None:
+        contract = get_side_view_rung_contract(target_rung)
+        kp_order = list(contract.labels)
+    else:
+        contract = get_side_view_rung_contract(target_rung)
+
+    json_files = sorted(input_dir.glob("*.json"))
+    train_dir = output_dir / "labels" / "train"
+    val_dir = output_dir / "labels" / "val"
+    holdout_dir = output_dir / "labels" / "holdout"
+    train_dir.mkdir(parents=True, exist_ok=True)
+    val_dir.mkdir(parents=True, exist_ok=True)
+    holdout_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_jsons: list[pathlib.Path] = []
+    report_rows: list[dict[str, str]] = []
+    payload_by_name: dict[str, dict] = {}
+
+    for json_path in json_files:
+        try:
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            report_rows.append(
+                {
+                    "json_name": json_path.name,
+                    "status": "rejected",
+                    "split": "",
+                    "reason": f"malformed_json: {exc}",
+                    "label_path": "",
+                }
+            )
+            continue
+
+        is_valid, reason = _validate_accepted_19kp_payload(payload)
+        if not is_valid:
+            report_rows.append(
+                {
+                    "json_name": json_path.name,
+                    "status": "rejected",
+                    "split": "",
+                    "reason": reason,
+                    "label_path": "",
+                }
+            )
+            continue
+        valid_jsons.append(json_path)
+        payload_by_name[json_path.name] = payload
+
+    _, val_jsons = _split_deterministic(valid_jsons, val_fraction=val_fraction)
+    val_set = {path.name for path in val_jsons}
+
+    converted_train = 0
+    converted_val = 0
+    converted_holdout = 0
+    holdout_images: list[str] = []
+    rejected = sum(1 for row in report_rows if row["status"] == "rejected")
+
+    for json_path in valid_jsons:
+        split = "val" if json_path.name in val_set else "train"
+        target_dir = val_dir if split == "val" else train_dir
+        ok = convert_json(json_path, img_dir, target_dir, kp_order)
+        if not ok:
+            rejected += 1
+            report_rows.append(
+                {
+                    "json_name": json_path.name,
+                    "status": "rejected",
+                    "split": split,
+                    "reason": "conversion_failed",
+                    "label_path": "",
+                }
+            )
+            continue
+
+        label_path = target_dir / f"{json_path.stem}.txt"
+        if split == "val":
+            holdout_label_path = holdout_dir / f"{json_path.stem}.txt"
+            holdout_label_path.write_text(
+                label_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            image_path = (
+                payload_by_name[json_path.name].get("imagePath")
+                or json_path.with_suffix(".jpg").name
+            )
+            image_name = pathlib.Path(str(image_path)).name
+            holdout_images.append(image_name)
+            converted_holdout += 1
+
+        report_rows.append(
+            {
+                "json_name": json_path.name,
+                "status": "converted",
+                "split": split,
+                "reason": "",
+                "label_path": str(label_path),
+            }
+        )
+        if split == "val":
+            converted_val += 1
+        else:
+            converted_train += 1
+
+    manifest_path = output_dir / "holdout_manifest.txt"
+    manifest_path.write_text(
+        "".join(f"{image_name}\n" for image_name in sorted(holdout_images)),
+        encoding="utf-8",
+    )
+
+    report_path = output_dir / "conversion_report.csv"
+    with report_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=["json_name", "status", "split", "reason", "label_path"],
+        )
+        writer.writeheader()
+        writer.writerows(report_rows)
+
+    summary = {
+        "total_json": len(json_files),
+        "target_rung": contract.name,
+        "converted_train": converted_train,
+        "converted_val": converted_val,
+        "converted_holdout": converted_holdout,
+        "rejected": rejected,
+        "holdout_manifest": manifest_path.name,
+    }
+    (output_dir / "conversion_summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    _write_dataset_config(output_dir / "dataset_pose.yaml", contract, dataset_root=output_dir)
+    _write_dataset_config(
+        output_dir / "_colab_staging" / "dataset_pose.yaml",
+        contract,
+        dataset_root=output_dir,
+    )
+    return summary
+
+
+def _write_dataset_config(
+    path: pathlib.Path,
+    contract: SideViewRungContract,
+    *,
+    dataset_root: pathlib.Path,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        f"path: {dataset_root.as_posix()}\n"
+        "train: images/train\n"
+        "val: images/val\n"
+        "kpt_shape:\n"
+        f"- {contract.kpt_shape[0]}\n"
+        f"- {contract.kpt_shape[1]}\n"
+        "flip_idx:\n"
+        + "".join(f"- {idx}\n" for idx in contract.flip_idx)
+        + "nc: 1\n"
+        + "names:\n"
+        + "  0: vehicle\n",
+        encoding="utf-8",
+    )
+
+
 def parse_keypoint_order(keypoints_arg: str | None) -> list[str]:
     """Return selected keypoint order from CLI arg.
 
     Args:
-        keypoints_arg: Comma-separated labels, or None to use all default labels.
+        keypoints_arg: Comma-separated labels, a single rung name, or None to use all default labels.
     """
     if not keypoints_arg:
         return list(DEFAULT_KP_ORDER)
 
     requested = [k.strip() for k in keypoints_arg.split(",") if k.strip()]
+    if len(requested) == 1 and requested[0].upper() in SIDE_VIEW_RUNGS:
+        return list(get_side_view_rung_schema(requested[0]))
+
     unknown = [k for k in requested if k not in DEFAULT_KP_ORDER]
     if unknown:
         raise ValueError(f"Unknown keypoint labels: {', '.join(unknown)}")

@@ -119,3 +119,29 @@ Validate whether `yolo_training/runs/side_view_pose_7kp_bumper_smoke/weights/bes
 - Decision: Reject promotion.
 - Rationale: The label recipe and QA gate are fixed, but the small corrected 7KP subset still does not generalize to out-of-sample endpoint localization. Internal validation is over-optimistic on 41 labels.
 - Next step: do not spend more local epochs on this subset. Build a larger, manually verified body-end set with hard holdout-like examples, or keep bumper endpoints as geometry-derived estimates until enough real endpoint labels exist.
+
+## Promoted Backend Model Recheck
+
+**Date:** May 24, 2026  
+**Model:** `D:\project\vehicle-sdi-system\cv_service\models\best.pt`  
+**Evaluator fix:** `scripts/evaluate_7kp_body_end_model.py` now uses the promoted 7KP training/backend keypoint order:
+
+```text
+front_wheel_center, front_wheel_ground, rear_wheel_center,
+rear_wheel_ground, ground_ref, front_bumper, rear_bumper
+```
+
+**Command:**
+
+```powershell
+.\.venv\Scripts\python.exe scripts\evaluate_7kp_body_end_model.py `
+  --model D:\project\vehicle-sdi-system\cv_service\models\best.pt `
+  --manifest yolo_training\runs\side_view_pose_7kp_bumper_oos_20260524\holdout_manifest.txt `
+  --output-dir yolo_training\runs\side_view_pose_7kp_promoted_best_oos_backend_order_20260524 `
+  --device cpu
+```
+
+**Result:** 33/33 PASS for geometry sanity after the evaluator order fix.  
+**Artifacts:** `yolo_training/runs/side_view_pose_7kp_promoted_best_oos_backend_order_20260524/`
+
+**Decision:** Treat the promoted backend side-view 7KP geometry gate as green, not as full side-view completion. Facing direction must be determined first and independently checked before front/rear semantic labels are trusted for production SDI measurements. Keep batch_013 human verification as cleanup before future retrains, with orientation-risk rows first.

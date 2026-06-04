@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "D:\\project\\sdi-helper\\.venv/Scripts\\headroom.EXE init hook ensure --profile init-sdi-helper-6766ea87 --marker headroom-init-codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "D:\\project\\sdi-helper\\.venv/Scripts\\headroom.EXE init hook ensure --profile init-sdi-helper-6766ea87 --marker headroom-init-codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

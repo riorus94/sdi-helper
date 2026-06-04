@@ -50,6 +50,7 @@ yolo_training/**/backups/
 yolo_training/**/rejected_non_side/
 yolo_training/**/training_references/
 yolo_training/stanford_raw_filter/
+yolo_training/rear_view_dataset/subsets/stanford_rear_clean/images/
 yolo_training/**/images/all/
 yolo_training/**/images/train/
 yolo_training/**/images/val/

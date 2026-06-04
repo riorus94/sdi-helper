@@ -14,6 +14,11 @@ References:
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
+FRONT_BUMPER_WHEEL_DIAMETER_RATIO = 1.25
+REAR_BUMPER_WHEEL_DIAMETER_RATIO = 1.4
+OVERALL_HEIGHT_WHEEL_DIAMETER_RATIO = 2.2
+ENGINE_HOOD_HEIGHT_WHEEL_DIAMETER_RATIO = 1.5
+
 
 @dataclass
 class WheelDetection:
@@ -174,6 +179,45 @@ def _is_plausible_prior(kp_name: str, prior: KeypointPrior, template_prior: Keyp
     return True
 
 
+def _ratio_reference_estimate(
+    kp_name: str,
+    *,
+    fx: float,
+    fy: float,
+    rx: float,
+    ry: float,
+    ground_ref_x: float,
+    ground_ref_y: float,
+    direction: float,
+    det_radius: float,
+    det_front_radius: float,
+) -> Tuple[float, float] | None:
+    wheel_diameter = det_radius * 2.0
+    front_wheel_diameter = det_front_radius * 2.0
+
+    if kp_name == "front_bumper":
+        return (
+            fx + direction * FRONT_BUMPER_WHEEL_DIAMETER_RATIO * wheel_diameter,
+            fy,
+        )
+    if kp_name == "rear_bumper":
+        return (
+            rx - direction * REAR_BUMPER_WHEEL_DIAMETER_RATIO * wheel_diameter,
+            ry,
+        )
+    if kp_name == "roof_apex":
+        return (
+            ground_ref_x,
+            ground_ref_y - OVERALL_HEIGHT_WHEEL_DIAMETER_RATIO * wheel_diameter,
+        )
+    if kp_name == "hood_edge":
+        return (
+            fx,
+            ground_ref_y - ENGINE_HOOD_HEIGHT_WHEEL_DIAMETER_RATIO * front_wheel_diameter,
+        )
+    return None
+
+
 def estimate_keypoints(
     wheels: WheelDetection,
     learned_priors: Dict[str, KeypointPrior] | None = None,
@@ -206,6 +250,8 @@ def estimate_keypoints(
     det_front_radius = abs(fg_y - fy)
     det_rear_radius = abs(rg_y - ry)
     det_radius = (det_front_radius + det_rear_radius) / 2.0
+    ground_ref_x = (fg_x + rg_x) / 2.0
+    ground_ref_y = (fg_y + rg_y) / 2.0
     
     # Geometric validation: check if wheels make sense
     if det_wheelbase < 20 or det_radius < 8:
@@ -259,11 +305,33 @@ def estimate_keypoints(
                 )
         elif kp_name == "ground_ref":
             estimates[kp_name] = KeypointEstimate(
-                x=(fg_x + rg_x) / 2.0,
-                y=(fg_y + rg_y) / 2.0,
+                x=ground_ref_x,
+                y=ground_ref_y,
                 confidence=wheels.confidence,
             )
         else:
+            ratio_estimate = _ratio_reference_estimate(
+                kp_name,
+                fx=fx,
+                fy=fy,
+                rx=rx,
+                ry=ry,
+                ground_ref_x=ground_ref_x,
+                ground_ref_y=ground_ref_y,
+                direction=direction,
+                det_radius=det_radius,
+                det_front_radius=det_front_radius,
+            )
+            if ratio_estimate is not None:
+                est_x, est_y = ratio_estimate
+                conf = (0.60 * wheels.confidence) + (0.25 * geometry_score) + 0.15
+                conf -= alignment_penalty
+                conf = max(0.25, min(1.0, conf))
+                estimates[kp_name] = KeypointEstimate(
+                    x=est_x, y=est_y, confidence=conf
+                )
+                continue
+
             # Either use learned prior (normalized) or template pixels.
             prior = prior_map.get(kp_name)
             if prior is not None:

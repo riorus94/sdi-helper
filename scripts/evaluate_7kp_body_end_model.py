@@ -20,11 +20,11 @@ from sdi_helper.domain.geometry.keypoint_heuristics import infer_orientation_fro
 
 
 KEYPOINT_NAMES = (
-    "ground_ref",
     "front_wheel_center",
     "front_wheel_ground",
     "rear_wheel_center",
     "rear_wheel_ground",
+    "ground_ref",
     "front_bumper",
     "rear_bumper",
 )
