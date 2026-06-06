@@ -11,15 +11,25 @@ import csv
 import importlib
 import json
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sdi_helper.domain.geometry.side_view_keypoint_contract import get_side_view_rung_contract
+from sdi_helper.domain.geometry.side_view_keypoint_contract import (
+    SIDE_VIEW_RUNGS,
+    get_side_view_rung_contract,
+)
 from yolo_training.labelme_to_yolo_pose import DEFAULT_KP_ORDER
 
 
 KEYPOINT_NAMES = tuple(DEFAULT_KP_ORDER)
+
+
+# Per-keypoint readiness states. "ok" = detected at or above threshold;
+# "low" = detected but below threshold; "missing" = not produced by the model.
+KP_OK = "ok"
+KP_LOW = "low"
+KP_MISSING = "missing"
 
 
 @dataclass
@@ -31,6 +41,11 @@ class PredictionSummary:
     status: str
     active_rung_status: str
     warnings: list[str]
+    # Per-keypoint confidence (None when the keypoint was not detected) and
+    # per-keypoint state (KP_OK / KP_LOW / KP_MISSING). Additive: the strict
+    # PASS/FAIL fields above are unchanged.
+    keypoint_confidences: dict[str, float | None] = field(default_factory=dict)
+    keypoint_states: dict[str, str] = field(default_factory=dict)
 
     @property
     def verdict(self) -> str:
@@ -96,22 +111,25 @@ def summarize_prediction(
     warnings: list[str] = []
     detected = 0
     min_conf: float | None = None
+    keypoint_confidences: dict[str, float | None] = {}
+    keypoint_states: dict[str, str] = {}
 
     for idx, label in enumerate(contract.labels):
-        if idx >= len(person_xy):
+        point = person_xy[idx] if idx < len(person_xy) else None
+        if point is None or len(point) < 2:
             warnings.append(f"missing_keypoints: {label}")
+            keypoint_confidences[label] = None
+            keypoint_states[label] = KP_MISSING
             continue
 
-        point = person_xy[idx]
         confidence = person_conf[idx] if idx < len(person_conf) else 0.0
-        if len(point) < 2:
-            warnings.append(f"missing_keypoints: {label}")
-            continue
-
+        keypoint_confidences[label] = confidence
         min_conf = confidence if min_conf is None else min(min_conf, confidence)
         if confidence < confidence_threshold:
             warnings.append(f"low_confidence: {label}")
+            keypoint_states[label] = KP_LOW
             continue
+        keypoint_states[label] = KP_OK
         detected += 1
 
     status = "PASS" if detected == len(contract.labels) and not warnings else "FAIL"
@@ -123,6 +141,29 @@ def summarize_prediction(
         status=status,
         active_rung_status=status,
         warnings=warnings,
+        keypoint_confidences=keypoint_confidences,
+        keypoint_states=keypoint_states,
+    )
+
+
+def missing_image_summary(image_path: Path, target_rung: str = "19KP") -> PredictionSummary:
+    """Summary for a holdout image that could not be read.
+
+    The strict gate already fails it; we also mark every target-rung keypoint as
+    KP_MISSING so the per-keypoint and per-rung diagnostics count it instead of
+    silently ignoring a row with an empty state map.
+    """
+    contract = get_side_view_rung_contract(target_rung)
+    return PredictionSummary(
+        image=image_path,
+        target_rung=contract.name,
+        kps_detected=0,
+        min_conf=None,
+        status="FAIL",
+        active_rung_status="FAIL",
+        warnings=["image_missing"],
+        keypoint_confidences={label: None for label in contract.labels},
+        keypoint_states={label: KP_MISSING for label in contract.labels},
     )
 
 
@@ -158,6 +199,177 @@ def write_prediction_summary(results: list[PredictionSummary], path: Path) -> No
                     "status": result.status,
                     "active_rung_status": result.active_rung_status,
                     "warnings": " | ".join(result.warnings),
+                }
+            )
+
+
+def write_keypoint_confidence_report(results: list[PredictionSummary], path: Path) -> None:
+    """Write one row per (image, keypoint) with its confidence and readiness state.
+
+    Additive diagnostic artifact — it sits alongside prediction_summary.csv and does
+    not alter the strict 19KP PASS/FAIL evidence.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle, fieldnames=["image", "keypoint", "confidence", "state"]
+        )
+        writer.writeheader()
+        for result in results:
+            for label, state in result.keypoint_states.items():
+                writer.writerow(
+                    {
+                        "image": str(result.image),
+                        "keypoint": label,
+                        "confidence": _fmt_conf(result.keypoint_confidences.get(label)),
+                        "state": state,
+                    }
+                )
+
+
+def most_problematic_keypoint(
+    results: list[PredictionSummary],
+) -> tuple[str, int] | None:
+    """Keypoint with the most non-ok (low or missing) states across the holdout.
+
+    Returns (label, count) or None when every keypoint is ok on every image.
+    Ties resolve by canonical keypoint order for determinism.
+    """
+    counts: dict[str, int] = {}
+    for result in results:
+        for label, state in result.keypoint_states.items():
+            if state != KP_OK:
+                counts[label] = counts.get(label, 0) + 1
+    if not counts:
+        return None
+    best = max(KEYPOINT_NAMES, key=lambda label: counts.get(label, 0))
+    return best, counts[best]
+
+
+@dataclass
+class RungVerdict:
+    rung: str
+    num_keypoints: int
+    verdict: str  # PASS / FAIL
+    weakest_keypoint: str | None
+    weakest_nonok_count: int
+    min_conf: float | None
+    nonok_keypoints: tuple[str, ...] = ()
+
+
+@dataclass
+class RungRecommendation:
+    recommended_rung: str | None  # highest contiguous passing rung from the bottom
+    next_rung: str | None  # first failing rung above the recommendation
+    blocking_keypoints: tuple[str, ...]  # non-ok keypoints of next_rung
+
+
+def aggregate_rung_verdicts(
+    results: list[PredictionSummary],
+    rungs: tuple[str, ...] = SIDE_VIEW_RUNGS,
+) -> list[RungVerdict]:
+    """Roll per-keypoint states up into a PASS/FAIL verdict for each rung.
+
+    A rung PASSES only when every keypoint it contains is ``ok`` on every holdout
+    image (a missing or low-confidence keypoint anywhere fails the rung). The
+    weakest keypoint is the rung member flagged non-ok on the most images; ties
+    resolve by canonical keypoint order. Rung membership comes from the contract.
+    """
+    verdicts: list[RungVerdict] = []
+    for rung in rungs:
+        labels = get_side_view_rung_contract(rung).labels
+        nonok_counts: dict[str, int] = {}
+        min_conf: float | None = None
+        for result in results:
+            for label in labels:
+                state = result.keypoint_states.get(label, KP_MISSING)
+                if state != KP_OK:
+                    nonok_counts[label] = nonok_counts.get(label, 0) + 1
+                conf = result.keypoint_confidences.get(label)
+                if conf is not None:
+                    min_conf = conf if min_conf is None else min(min_conf, conf)
+
+        total_nonok = sum(nonok_counts.values())
+        if nonok_counts:
+            weakest = max(KEYPOINT_NAMES, key=lambda label: nonok_counts.get(label, 0))
+            weakest_count = nonok_counts[weakest]
+        else:
+            weakest = None
+            weakest_count = 0
+        nonok_keypoints = tuple(label for label in KEYPOINT_NAMES if label in nonok_counts)
+        verdicts.append(
+            RungVerdict(
+                rung=rung,
+                num_keypoints=len(labels),
+                verdict="PASS" if total_nonok == 0 else "FAIL",
+                weakest_keypoint=weakest,
+                weakest_nonok_count=weakest_count,
+                min_conf=min_conf,
+                nonok_keypoints=nonok_keypoints,
+            )
+        )
+    return verdicts
+
+
+def recommend_promotion_rung(verdicts: list[RungVerdict]) -> RungRecommendation:
+    """Recommend the highest contiguous passing rung walking the ladder from the bottom.
+
+    The recommendation is the last rung that PASSES before the first FAIL, so a rung is
+    never recommended above an unmet lower rung. ``next_rung`` is that first failing rung
+    (the immediate growth target) and ``blocking_keypoints`` are its non-ok keypoints.
+    When every rung passes, the recommendation is the top rung with no next/blockers.
+    When the baseline rung fails, ``recommended_rung`` is None.
+    """
+    recommended: str | None = None
+    for verdict in verdicts:
+        if verdict.verdict != "PASS":
+            return RungRecommendation(
+                recommended_rung=recommended,
+                next_rung=verdict.rung,
+                blocking_keypoints=verdict.nonok_keypoints,
+            )
+        recommended = verdict.rung
+    return RungRecommendation(
+        recommended_rung=recommended, next_rung=None, blocking_keypoints=()
+    )
+
+
+def write_promotion_recommendation(rec: RungRecommendation, path: Path) -> None:
+    """Write the promotion recommendation as an additive JSON artifact."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "recommended_rung": rec.recommended_rung,
+        "next_rung": rec.next_rung,
+        "blocking_keypoints": list(rec.blocking_keypoints),
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def write_rung_verdict_report(verdicts: list[RungVerdict], path: Path) -> None:
+    """Write one row per rung with its PASS/FAIL verdict and weakest keypoint."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "rung",
+                "num_keypoints",
+                "verdict",
+                "weakest_keypoint",
+                "weakest_nonok_count",
+                "min_conf",
+            ],
+        )
+        writer.writeheader()
+        for v in verdicts:
+            writer.writerow(
+                {
+                    "rung": v.rung,
+                    "num_keypoints": v.num_keypoints,
+                    "verdict": v.verdict,
+                    "weakest_keypoint": v.weakest_keypoint or "",
+                    "weakest_nonok_count": v.weakest_nonok_count,
+                    "min_conf": _fmt_conf(v.min_conf),
                 }
             )
 
@@ -212,17 +424,7 @@ def evaluate_holdout(
 
     for image_path in images:
         if not image_path.exists():
-            summaries.append(
-                PredictionSummary(
-                    image=image_path,
-                    target_rung=get_side_view_rung_contract(target_rung).name,
-                    kps_detected=0,
-                    min_conf=None,
-                    status="FAIL",
-                    active_rung_status="FAIL",
-                    warnings=["image_missing"],
-                )
-            )
+            summaries.append(missing_image_summary(image_path, target_rung))
             continue
 
         result = model.predict(
@@ -269,6 +471,15 @@ def main() -> int:
     shutil.copy2(args.manifest, args.output_dir / "holdout_manifest.txt")
     prediction_summary = args.output_dir / "prediction_summary.csv"
     write_prediction_summary(summaries, prediction_summary)
+    write_keypoint_confidence_report(
+        summaries, args.output_dir / "keypoint_confidence.csv"
+    )
+    rung_verdicts = aggregate_rung_verdicts(summaries)
+    write_rung_verdict_report(rung_verdicts, args.output_dir / "rung_verdicts.csv")
+    recommendation = recommend_promotion_rung(rung_verdicts)
+    write_promotion_recommendation(
+        recommendation, args.output_dir / "promotion_recommendation.json"
+    )
     write_evaluation_metadata(
         path=args.output_dir / "evaluation_metadata.json",
         candidate_model=args.model,
@@ -284,6 +495,32 @@ def main() -> int:
     print(f"Evaluated images: {len(summaries)}")
     print(f"PASS: {passed}")
     print(f"FAIL: {failed}")
+    worst = most_problematic_keypoint(summaries)
+    if worst is None:
+        print("Most problematic keypoint: none (all keypoints ok)")
+    else:
+        label, count = worst
+        print(f"Most problematic keypoint: {label} (non-ok on {count} image(s))")
+    print("Rung verdicts:")
+    for v in rung_verdicts:
+        blocker = "" if v.weakest_keypoint is None else f" (weakest: {v.weakest_keypoint})"
+        print(f"  {v.rung}: {v.verdict}{blocker}")
+    if recommendation.recommended_rung is None:
+        blockers = ", ".join(recommendation.blocking_keypoints) or "unknown"
+        print(
+            f"Recommended promotion rung: none "
+            f"({recommendation.next_rung} not met; blockers: {blockers})"
+        )
+    elif recommendation.next_rung is None:
+        print(
+            f"Recommended promotion rung: {recommendation.recommended_rung} (all rungs pass)"
+        )
+    else:
+        blockers = ", ".join(recommendation.blocking_keypoints) or "unknown"
+        print(
+            f"Recommended promotion rung: {recommendation.recommended_rung} "
+            f"(blocked from {recommendation.next_rung} by: {blockers})"
+        )
     print(f"Output: {args.output_dir}")
     return 0 if failed == 0 else 1
 
