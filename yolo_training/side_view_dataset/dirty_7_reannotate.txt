@@ -1,0 +1,10 @@
+# 7 canonical JSON with gross OOB keypoints (>=3% off-frame). Converter does NOT clamp -> written v=2 -> training noise.
+# Fix: nudge point onto frame edge, OR set visibility 0 (off-frame).
+# json_name | imagePath | WxH | label(pct_off,x,y) ...
+06f72a22663d48e2bdc57b511b4bc91b.json | 06f72a22663d48e2bdc57b511b4bc91b.jpg | 300x168 | front_bumper(5.6%,316.7,68.3)  roof_apex(8.0%,174.0,-13.4)  side_window_top_front(5.7%,241.5,-9.5)  side_window_top_rear(6.4%,128.6,-10.8)
+2cef49a5fb5746ecb452137074efc1d1.json | 2cef49a5fb5746ecb452137074efc1d1.jpg | 300x168 | front_bumper(4.4%,313.2,75.7)
+3ba9eb0b4eda460eb2176846163472b7.json | 3ba9eb0b4eda460eb2176846163472b7.jpg | 279x180 | front_bumper(3.4%,288.5,89.2)
+82597010a7114f698201d82c6a03adbc.json | 82597010a7114f698201d82c6a03adbc.jpg | 275x183 | roof_apex(18.9%,145.3,-34.6)  side_window_top_front(16.2%,200.0,-29.7)  side_window_top_rear(17.1%,108.6,-31.3)
+9c09af7696694bc2955ef76a0a508bd0.json | 9c09af7696694bc2955ef76a0a508bd0.jpg | 259x194 | front_bumper(5.3%,272.8,115.7)
+c3cc96b743144ff3828d88fd8d0fc96c.json | c3cc96b743144ff3828d88fd8d0fc96c.jpg | 250x141 | front_bumper(9.2%,273.1,70.5)  panel_front(4.4%,261.1,105.8)
+dac523d68aa949918e19e315c13465ba.json | dac523d68aa949918e19e315c13465ba.jpg | 322x157 | front_bumper(9.2%,351.7,82.9)  roof_apex(8.6%,180.0,-13.6)  side_window_top_front(5.7%,261.2,-9.0)  side_window_top_rear(6.7%,125.3,-10.5)  panel_front(4.1%,335.0,136.5)
