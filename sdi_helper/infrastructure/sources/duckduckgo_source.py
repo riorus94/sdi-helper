@@ -106,7 +106,7 @@ class DuckDuckGoSource:
             if not nxt:
                 break
             # `next` is a query string like "l=wt-wt&o=json&q=...&vqd=...&s=50&..."
-            from urllib.parse import parse_qs, urlencode
+            from urllib.parse import parse_qs
             try:
                 parsed = {k: v[0] for k, v in parse_qs(nxt.lstrip("?")).items()}
             except Exception:

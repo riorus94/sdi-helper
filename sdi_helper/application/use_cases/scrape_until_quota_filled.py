@@ -4,12 +4,12 @@ import logging
 from dataclasses import dataclass
 
 from sdi_helper.application.dto.process_result import ProcessOutcome
-
-log = logging.getLogger(__name__)
 from sdi_helper.application.dto.scrape_report import ScrapeReport
 from sdi_helper.application.ports.image_source import ImageSource
 from sdi_helper.application.ports.quota_repository import QuotaRepository
 from sdi_helper.application.use_cases.process_candidate_image import ProcessCandidateImage
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -36,7 +36,7 @@ class ScrapeUntilQuotaFilled:
 
                     try:
                         candidates = source.search(query, self.max_results_per_query)
-                    except Exception as exc:
+                    except Exception:
                         log.warning("source=%s query=%r search failed", source.name, query, exc_info=True)
                         continue
 
@@ -45,7 +45,7 @@ class ScrapeUntilQuotaFilled:
                             break
                         try:
                             result = self.process.execute(candidate)
-                        except Exception as exc:
+                        except Exception:
                             log.error("failed to process candidate url=%s", candidate.image_url, exc_info=True)
                             report.record_reject(ProcessOutcome.REJECTED_DOWNLOAD, source.name)
                             continue
@@ -75,7 +75,7 @@ class ScrapeUntilQuotaFilled:
             self.quota_repository.save(self.process.quota)
             try:
                 self.process.dedup.flush()
-            except Exception as exc:
+            except Exception:
                 log.warning("dedup flush failed", exc_info=True)
             for source in self.sources:
                 try:
