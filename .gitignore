@@ -70,3 +70,8 @@ scrape.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Agent skills (installed via `npx skills add`) — kept local, not tracked
+.claude/skills/
+.agents/
+skills-lock.json
