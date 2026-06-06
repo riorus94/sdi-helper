@@ -15,7 +15,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sdi_helper.domain.geometry.side_view_keypoint_contract import get_side_view_rung_contract
+from sdi_helper.domain.geometry.side_view_keypoint_contract import (
+    SIDE_VIEW_RUNGS,
+    get_side_view_rung_contract,
+)
 from yolo_training.labelme_to_yolo_pose import DEFAULT_KP_ORDER
 
 
@@ -222,6 +225,90 @@ def most_problematic_keypoint(
     return best, counts[best]
 
 
+@dataclass
+class RungVerdict:
+    rung: str
+    num_keypoints: int
+    verdict: str  # PASS / FAIL
+    weakest_keypoint: str | None
+    weakest_nonok_count: int
+    min_conf: float | None
+
+
+def aggregate_rung_verdicts(
+    results: list[PredictionSummary],
+    rungs: tuple[str, ...] = SIDE_VIEW_RUNGS,
+) -> list[RungVerdict]:
+    """Roll per-keypoint states up into a PASS/FAIL verdict for each rung.
+
+    A rung PASSES only when every keypoint it contains is ``ok`` on every holdout
+    image (a missing or low-confidence keypoint anywhere fails the rung). The
+    weakest keypoint is the rung member flagged non-ok on the most images; ties
+    resolve by canonical keypoint order. Rung membership comes from the contract.
+    """
+    verdicts: list[RungVerdict] = []
+    for rung in rungs:
+        labels = get_side_view_rung_contract(rung).labels
+        nonok_counts: dict[str, int] = {}
+        min_conf: float | None = None
+        for result in results:
+            for label in labels:
+                state = result.keypoint_states.get(label, KP_MISSING)
+                if state != KP_OK:
+                    nonok_counts[label] = nonok_counts.get(label, 0) + 1
+                conf = result.keypoint_confidences.get(label)
+                if conf is not None:
+                    min_conf = conf if min_conf is None else min(min_conf, conf)
+
+        total_nonok = sum(nonok_counts.values())
+        if nonok_counts:
+            weakest = max(KEYPOINT_NAMES, key=lambda label: nonok_counts.get(label, 0))
+            weakest_count = nonok_counts[weakest]
+        else:
+            weakest = None
+            weakest_count = 0
+        verdicts.append(
+            RungVerdict(
+                rung=rung,
+                num_keypoints=len(labels),
+                verdict="PASS" if total_nonok == 0 else "FAIL",
+                weakest_keypoint=weakest,
+                weakest_nonok_count=weakest_count,
+                min_conf=min_conf,
+            )
+        )
+    return verdicts
+
+
+def write_rung_verdict_report(verdicts: list[RungVerdict], path: Path) -> None:
+    """Write one row per rung with its PASS/FAIL verdict and weakest keypoint."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "rung",
+                "num_keypoints",
+                "verdict",
+                "weakest_keypoint",
+                "weakest_nonok_count",
+                "min_conf",
+            ],
+        )
+        writer.writeheader()
+        for v in verdicts:
+            writer.writerow(
+                {
+                    "rung": v.rung,
+                    "num_keypoints": v.num_keypoints,
+                    "verdict": v.verdict,
+                    "weakest_keypoint": v.weakest_keypoint or "",
+                    "weakest_nonok_count": v.weakest_nonok_count,
+                    "min_conf": _fmt_conf(v.min_conf),
+                }
+            )
+
+
 def write_evaluation_metadata(
     *,
     path: Path,
@@ -332,6 +419,8 @@ def main() -> int:
     write_keypoint_confidence_report(
         summaries, args.output_dir / "keypoint_confidence.csv"
     )
+    rung_verdicts = aggregate_rung_verdicts(summaries)
+    write_rung_verdict_report(rung_verdicts, args.output_dir / "rung_verdicts.csv")
     write_evaluation_metadata(
         path=args.output_dir / "evaluation_metadata.json",
         candidate_model=args.model,
@@ -353,6 +442,10 @@ def main() -> int:
     else:
         label, count = worst
         print(f"Most problematic keypoint: {label} (non-ok on {count} image(s))")
+    print("Rung verdicts:")
+    for v in rung_verdicts:
+        blocker = "" if v.weakest_keypoint is None else f" (weakest: {v.weakest_keypoint})"
+        print(f"  {v.rung}: {v.verdict}{blocker}")
     print(f"Output: {args.output_dir}")
     return 0 if failed == 0 else 1
 

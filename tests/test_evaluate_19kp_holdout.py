@@ -5,12 +5,15 @@ from types import SimpleNamespace
 
 from scripts.evaluate_19kp_holdout import (
     KEYPOINT_NAMES,
+    aggregate_rung_verdicts,
     most_problematic_keypoint,
     summarize_prediction,
     write_evaluation_metadata,
     write_keypoint_confidence_report,
     write_prediction_summary,
+    write_rung_verdict_report,
 )
+from sdi_helper.domain.geometry.side_view_keypoint_contract import SIDE_VIEW_RUNGS
 from yolo_training.labelme_to_yolo_pose import DEFAULT_KP_ORDER
 
 
@@ -193,6 +196,59 @@ def test_most_problematic_keypoint_counts_non_ok_states_across_images() -> None:
 def test_most_problematic_keypoint_returns_none_when_all_ok() -> None:
     summaries = [summarize_prediction(Path("clean.jpg"), _result(), confidence_threshold=0.25)]
     assert most_problematic_keypoint(summaries) is None
+
+
+def test_aggregate_rung_verdicts_all_pass_when_every_keypoint_ok() -> None:
+    summaries = [summarize_prediction(Path("clean.jpg"), _result(), confidence_threshold=0.25)]
+
+    verdicts = aggregate_rung_verdicts(summaries)
+
+    assert tuple(v.rung for v in verdicts) == SIDE_VIEW_RUNGS
+    assert all(v.verdict == "PASS" for v in verdicts)
+    assert all(v.weakest_keypoint is None for v in verdicts)
+
+
+def test_aggregate_rung_verdicts_fails_only_rungs_containing_weak_keypoint() -> None:
+    # panel_front (DEFAULT_KP_ORDER idx 14) enters the ladder at 15KP.
+    summaries = [
+        summarize_prediction(Path(f"{i}.jpg"), _result(low_conf_idx=14), confidence_threshold=0.25)
+        for i in range(3)
+    ]
+
+    verdicts = {v.rung: v for v in aggregate_rung_verdicts(summaries)}
+
+    for rung in ("7KP", "9KP", "11KP", "13KP"):
+        assert verdicts[rung].verdict == "PASS"
+        assert verdicts[rung].weakest_keypoint is None
+    for rung in ("15KP", "17KP", "19KP"):
+        assert verdicts[rung].verdict == "FAIL"
+        assert verdicts[rung].weakest_keypoint == "panel_front"
+        assert verdicts[rung].weakest_nonok_count == 3
+
+
+def test_aggregate_rung_verdicts_missing_keypoint_fails_its_rung() -> None:
+    # ground_ref (idx 18) absent -> missing; ground_ref is in the 7KP baseline.
+    summaries = [summarize_prediction(Path("m.jpg"), _result(keypoint_count=18), confidence_threshold=0.25)]
+
+    verdicts = {v.rung: v for v in aggregate_rung_verdicts(summaries)}
+
+    assert verdicts["7KP"].verdict == "FAIL"
+    assert verdicts["7KP"].weakest_keypoint == "ground_ref"
+
+
+def test_write_rung_verdict_report_emits_one_row_per_rung(tmp_path: Path) -> None:
+    report_path = tmp_path / "rung_verdicts.csv"
+    summaries = [
+        summarize_prediction(Path("a.jpg"), _result(low_conf_idx=14), confidence_threshold=0.25)
+    ]
+
+    write_rung_verdict_report(aggregate_rung_verdicts(summaries), report_path)
+
+    rows = {r["rung"]: r for r in csv.DictReader(report_path.open("r", encoding="utf-8"))}
+    assert tuple(rows) == SIDE_VIEW_RUNGS
+    assert rows["13KP"]["verdict"] == "PASS"
+    assert rows["15KP"]["verdict"] == "FAIL"
+    assert rows["15KP"]["weakest_keypoint"] == "panel_front"
 
 
 def test_write_evaluation_metadata_records_candidate_model_and_manifest(tmp_path: Path) -> None:
