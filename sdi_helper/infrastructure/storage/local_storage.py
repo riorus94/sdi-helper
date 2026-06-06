@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 
 class LocalStorage:
@@ -25,7 +25,7 @@ class LocalStorage:
         path.write_text(text, encoding="utf-8")
         return str(path)
 
-    def put_json(self, key: str, payload: dict) -> str:
+    def put_json(self, key: str, payload: dict[str, Any]) -> str:
         return self.put_text(key, json.dumps(payload, indent=2, default=str))
 
     def get_bytes(self, key: str) -> bytes | None:

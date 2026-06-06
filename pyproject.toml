@@ -47,6 +47,24 @@ python_version = "3.11"
 strict = true
 files = ["sdi_helper"]
 
+# Third-party packages without type stubs. Ignore their missing imports rather
+# than vendoring stubs; our own code stays strictly typed.
+[[tool.mypy.overrides]]
+module = [
+    "cv2.*",
+    "torch.*",
+    "transformers.*",
+    "ultralytics.*",
+    "yaml",
+    "imagehash.*",
+    "selenium.*",
+    "PIL.*",
+    "requests.*",
+    "urllib3.*",
+    "webdriver_manager.*",
+]
+ignore_missing_imports = true
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100

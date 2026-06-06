@@ -49,7 +49,7 @@ class RequestsDownloader:
             )
             if resp.status_code != 200:
                 return None
-            return resp.content
+            return bytes(resp.content)
         except requests.RequestException:
             return None
 

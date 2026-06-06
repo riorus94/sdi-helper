@@ -48,8 +48,7 @@ jobs:
         continue-on-error: true
         run: ruff check sdi_helper tests
 
-      - name: Type check (mypy) [advisory]
-        continue-on-error: true
+      - name: Type check (mypy)
         run: mypy sdi_helper
 
       - name: Tests (pytest)
