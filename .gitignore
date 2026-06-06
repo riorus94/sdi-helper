@@ -70,3 +70,8 @@ scrape.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Agent skills (Matt Pocock skills) — kept local, not tracked
+.claude/skills/
+.agents/
+skills-lock.json
