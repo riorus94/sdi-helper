@@ -11,7 +11,7 @@ import csv
 import importlib
 import json
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +20,13 @@ from yolo_training.labelme_to_yolo_pose import DEFAULT_KP_ORDER
 
 
 KEYPOINT_NAMES = tuple(DEFAULT_KP_ORDER)
+
+
+# Per-keypoint readiness states. "ok" = detected at or above threshold;
+# "low" = detected but below threshold; "missing" = not produced by the model.
+KP_OK = "ok"
+KP_LOW = "low"
+KP_MISSING = "missing"
 
 
 @dataclass
@@ -31,6 +38,11 @@ class PredictionSummary:
     status: str
     active_rung_status: str
     warnings: list[str]
+    # Per-keypoint confidence (None when the keypoint was not detected) and
+    # per-keypoint state (KP_OK / KP_LOW / KP_MISSING). Additive: the strict
+    # PASS/FAIL fields above are unchanged.
+    keypoint_confidences: dict[str, float | None] = field(default_factory=dict)
+    keypoint_states: dict[str, str] = field(default_factory=dict)
 
     @property
     def verdict(self) -> str:
@@ -96,22 +108,25 @@ def summarize_prediction(
     warnings: list[str] = []
     detected = 0
     min_conf: float | None = None
+    keypoint_confidences: dict[str, float | None] = {}
+    keypoint_states: dict[str, str] = {}
 
     for idx, label in enumerate(contract.labels):
-        if idx >= len(person_xy):
+        point = person_xy[idx] if idx < len(person_xy) else None
+        if point is None or len(point) < 2:
             warnings.append(f"missing_keypoints: {label}")
+            keypoint_confidences[label] = None
+            keypoint_states[label] = KP_MISSING
             continue
 
-        point = person_xy[idx]
         confidence = person_conf[idx] if idx < len(person_conf) else 0.0
-        if len(point) < 2:
-            warnings.append(f"missing_keypoints: {label}")
-            continue
-
+        keypoint_confidences[label] = confidence
         min_conf = confidence if min_conf is None else min(min_conf, confidence)
         if confidence < confidence_threshold:
             warnings.append(f"low_confidence: {label}")
+            keypoint_states[label] = KP_LOW
             continue
+        keypoint_states[label] = KP_OK
         detected += 1
 
     status = "PASS" if detected == len(contract.labels) and not warnings else "FAIL"
@@ -123,6 +138,8 @@ def summarize_prediction(
         status=status,
         active_rung_status=status,
         warnings=warnings,
+        keypoint_confidences=keypoint_confidences,
+        keypoint_states=keypoint_states,
     )
 
 
@@ -160,6 +177,49 @@ def write_prediction_summary(results: list[PredictionSummary], path: Path) -> No
                     "warnings": " | ".join(result.warnings),
                 }
             )
+
+
+def write_keypoint_confidence_report(results: list[PredictionSummary], path: Path) -> None:
+    """Write one row per (image, keypoint) with its confidence and readiness state.
+
+    Additive diagnostic artifact — it sits alongside prediction_summary.csv and does
+    not alter the strict 19KP PASS/FAIL evidence.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle, fieldnames=["image", "keypoint", "confidence", "state"]
+        )
+        writer.writeheader()
+        for result in results:
+            for label, state in result.keypoint_states.items():
+                writer.writerow(
+                    {
+                        "image": str(result.image),
+                        "keypoint": label,
+                        "confidence": _fmt_conf(result.keypoint_confidences.get(label)),
+                        "state": state,
+                    }
+                )
+
+
+def most_problematic_keypoint(
+    results: list[PredictionSummary],
+) -> tuple[str, int] | None:
+    """Keypoint with the most non-ok (low or missing) states across the holdout.
+
+    Returns (label, count) or None when every keypoint is ok on every image.
+    Ties resolve by canonical keypoint order for determinism.
+    """
+    counts: dict[str, int] = {}
+    for result in results:
+        for label, state in result.keypoint_states.items():
+            if state != KP_OK:
+                counts[label] = counts.get(label, 0) + 1
+    if not counts:
+        return None
+    best = max(KEYPOINT_NAMES, key=lambda label: counts.get(label, 0))
+    return best, counts[best]
 
 
 def write_evaluation_metadata(
@@ -269,6 +329,9 @@ def main() -> int:
     shutil.copy2(args.manifest, args.output_dir / "holdout_manifest.txt")
     prediction_summary = args.output_dir / "prediction_summary.csv"
     write_prediction_summary(summaries, prediction_summary)
+    write_keypoint_confidence_report(
+        summaries, args.output_dir / "keypoint_confidence.csv"
+    )
     write_evaluation_metadata(
         path=args.output_dir / "evaluation_metadata.json",
         candidate_model=args.model,
@@ -284,6 +347,12 @@ def main() -> int:
     print(f"Evaluated images: {len(summaries)}")
     print(f"PASS: {passed}")
     print(f"FAIL: {failed}")
+    worst = most_problematic_keypoint(summaries)
+    if worst is None:
+        print("Most problematic keypoint: none (all keypoints ok)")
+    else:
+        label, count = worst
+        print(f"Most problematic keypoint: {label} (non-ok on {count} image(s))")
     print(f"Output: {args.output_dir}")
     return 0 if failed == 0 else 1
 

@@ -5,8 +5,10 @@ from types import SimpleNamespace
 
 from scripts.evaluate_19kp_holdout import (
     KEYPOINT_NAMES,
+    most_problematic_keypoint,
     summarize_prediction,
     write_evaluation_metadata,
+    write_keypoint_confidence_report,
     write_prediction_summary,
 )
 from yolo_training.labelme_to_yolo_pose import DEFAULT_KP_ORDER
@@ -115,6 +117,82 @@ def test_write_prediction_summary_uses_gate_compatible_status_column(tmp_path: P
     assert rows[0]["active_rung_status"] == "PASS"
     assert rows[1]["verdict"] == "FAIL"
     assert rows[1]["status"] == "FAIL"
+
+
+def test_summarize_prediction_records_per_keypoint_confidence_and_state() -> None:
+    summary = summarize_prediction(
+        Path("car.jpg"),
+        _result(),
+        confidence_threshold=0.25,
+    )
+
+    # every contract keypoint has a confidence value and an "ok" state
+    assert set(summary.keypoint_confidences) == set(KEYPOINT_NAMES)
+    assert all(conf == 0.9 for conf in summary.keypoint_confidences.values())
+    assert all(state == "ok" for state in summary.keypoint_states.values())
+
+
+def test_summarize_prediction_marks_low_confidence_keypoint_distinctly() -> None:
+    summary = summarize_prediction(
+        Path("low.jpg"),
+        _result(low_conf_idx=3),  # front_bumper
+        confidence_threshold=0.25,
+    )
+
+    assert summary.keypoint_confidences["front_bumper"] == 0.1
+    assert summary.keypoint_states["front_bumper"] == "low"
+    assert summary.keypoint_states["roof_apex"] == "ok"
+
+
+def test_summarize_prediction_marks_missing_keypoint_distinctly() -> None:
+    summary = summarize_prediction(
+        Path("missing.jpg"),
+        _result(keypoint_count=18),  # ground_ref absent
+        confidence_threshold=0.25,
+    )
+
+    assert summary.keypoint_confidences["ground_ref"] is None
+    assert summary.keypoint_states["ground_ref"] == "missing"
+
+
+def test_write_keypoint_confidence_report_emits_one_row_per_image_keypoint(
+    tmp_path: Path,
+) -> None:
+    report_path = tmp_path / "keypoint_confidence.csv"
+    summaries = [
+        summarize_prediction(Path("a.jpg"), _result(), confidence_threshold=0.25),
+        summarize_prediction(
+            Path("b.jpg"), _result(low_conf_idx=3), confidence_threshold=0.25
+        ),
+    ]
+
+    write_keypoint_confidence_report(summaries, report_path)
+
+    rows = list(csv.DictReader(report_path.open("r", encoding="utf-8")))
+    assert len(rows) == 2 * len(KEYPOINT_NAMES)
+    by_key = {(r["image"], r["keypoint"]): r for r in rows}
+    assert by_key[("a.jpg", "roof_apex")]["state"] == "ok"
+    assert by_key[("a.jpg", "roof_apex")]["confidence"] == "0.9000"
+    bumper = by_key[("b.jpg", "front_bumper")]
+    assert bumper["state"] == "low"
+    assert bumper["confidence"] == "0.1000"
+
+
+def test_most_problematic_keypoint_counts_non_ok_states_across_images() -> None:
+    summaries = [
+        summarize_prediction(Path("1.jpg"), _result(low_conf_idx=3), confidence_threshold=0.25),
+        summarize_prediction(Path("2.jpg"), _result(low_conf_idx=3), confidence_threshold=0.25),
+        summarize_prediction(Path("3.jpg"), _result(keypoint_count=18), confidence_threshold=0.25),
+    ]
+
+    label, count = most_problematic_keypoint(summaries)
+    assert label == "front_bumper"  # low on 2 images vs ground_ref missing on 1
+    assert count == 2
+
+
+def test_most_problematic_keypoint_returns_none_when_all_ok() -> None:
+    summaries = [summarize_prediction(Path("clean.jpg"), _result(), confidence_threshold=0.25)]
+    assert most_problematic_keypoint(summaries) is None
 
 
 def test_write_evaluation_metadata_records_candidate_model_and_manifest(tmp_path: Path) -> None:
