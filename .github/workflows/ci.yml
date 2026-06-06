@@ -1,0 +1,53 @@
+name: CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdi-helper-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: System deps for OpenCV
+        run: sudo apt-get update && sudo apt-get install -y libgl1 libglib2.0-0
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root --with dev
+
+      # Lint and type checks are advisory for now: the repo carries pre-existing
+      # ruff/mypy findings (largely missing third-party stubs). They report in CI
+      # without blocking; flip continue-on-error off once the debt is cleared.
+      - name: Lint (ruff) [advisory]
+        continue-on-error: true
+        run: make lint
+
+      - name: Type check (mypy) [advisory]
+        continue-on-error: true
+        run: make type
+
+      - name: Tests (pytest)
+        run: make test
