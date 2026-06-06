@@ -7,10 +7,12 @@ from scripts.evaluate_19kp_holdout import (
     KEYPOINT_NAMES,
     aggregate_rung_verdicts,
     most_problematic_keypoint,
+    recommend_promotion_rung,
     summarize_prediction,
     write_evaluation_metadata,
     write_keypoint_confidence_report,
     write_prediction_summary,
+    write_promotion_recommendation,
     write_rung_verdict_report,
 )
 from sdi_helper.domain.geometry.side_view_keypoint_contract import SIDE_VIEW_RUNGS
@@ -249,6 +251,57 @@ def test_write_rung_verdict_report_emits_one_row_per_rung(tmp_path: Path) -> Non
     assert rows["13KP"]["verdict"] == "PASS"
     assert rows["15KP"]["verdict"] == "FAIL"
     assert rows["15KP"]["weakest_keypoint"] == "panel_front"
+
+
+def test_recommend_promotion_rung_recommends_top_when_all_pass() -> None:
+    summaries = [summarize_prediction(Path("clean.jpg"), _result(), confidence_threshold=0.25)]
+
+    rec = recommend_promotion_rung(aggregate_rung_verdicts(summaries))
+
+    assert rec.recommended_rung == "19KP"
+    assert rec.next_rung is None
+    assert rec.blocking_keypoints == ()
+
+
+def test_recommend_promotion_rung_stops_below_first_failing_rung() -> None:
+    # panel_front weak -> first failing rung is 15KP; recommend 13KP.
+    summaries = [
+        summarize_prediction(Path(f"{i}.jpg"), _result(low_conf_idx=14), confidence_threshold=0.25)
+        for i in range(2)
+    ]
+
+    rec = recommend_promotion_rung(aggregate_rung_verdicts(summaries))
+
+    assert rec.recommended_rung == "13KP"
+    assert rec.next_rung == "15KP"
+    assert "panel_front" in rec.blocking_keypoints
+
+
+def test_recommend_promotion_rung_none_when_baseline_rung_fails() -> None:
+    # ground_ref missing -> 7KP (baseline) fails -> nothing is promotable.
+    summaries = [summarize_prediction(Path("m.jpg"), _result(keypoint_count=18), confidence_threshold=0.25)]
+
+    rec = recommend_promotion_rung(aggregate_rung_verdicts(summaries))
+
+    assert rec.recommended_rung is None
+    assert rec.next_rung == "7KP"
+    assert "ground_ref" in rec.blocking_keypoints
+
+
+def test_write_promotion_recommendation_serializes_decision(tmp_path: Path) -> None:
+    rec_path = tmp_path / "promotion_recommendation.json"
+    summaries = [
+        summarize_prediction(Path("a.jpg"), _result(low_conf_idx=14), confidence_threshold=0.25)
+    ]
+
+    write_promotion_recommendation(
+        recommend_promotion_rung(aggregate_rung_verdicts(summaries)), rec_path
+    )
+
+    payload = json.loads(rec_path.read_text(encoding="utf-8"))
+    assert payload["recommended_rung"] == "13KP"
+    assert payload["next_rung"] == "15KP"
+    assert "panel_front" in payload["blocking_keypoints"]
 
 
 def test_write_evaluation_metadata_records_candidate_model_and_manifest(tmp_path: Path) -> None:

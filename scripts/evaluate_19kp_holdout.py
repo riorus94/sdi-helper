@@ -233,6 +233,14 @@ class RungVerdict:
     weakest_keypoint: str | None
     weakest_nonok_count: int
     min_conf: float | None
+    nonok_keypoints: tuple[str, ...] = ()
+
+
+@dataclass
+class RungRecommendation:
+    recommended_rung: str | None  # highest contiguous passing rung from the bottom
+    next_rung: str | None  # first failing rung above the recommendation
+    blocking_keypoints: tuple[str, ...]  # non-ok keypoints of next_rung
 
 
 def aggregate_rung_verdicts(
@@ -267,6 +275,7 @@ def aggregate_rung_verdicts(
         else:
             weakest = None
             weakest_count = 0
+        nonok_keypoints = tuple(label for label in KEYPOINT_NAMES if label in nonok_counts)
         verdicts.append(
             RungVerdict(
                 rung=rung,
@@ -275,9 +284,44 @@ def aggregate_rung_verdicts(
                 weakest_keypoint=weakest,
                 weakest_nonok_count=weakest_count,
                 min_conf=min_conf,
+                nonok_keypoints=nonok_keypoints,
             )
         )
     return verdicts
+
+
+def recommend_promotion_rung(verdicts: list[RungVerdict]) -> RungRecommendation:
+    """Recommend the highest contiguous passing rung walking the ladder from the bottom.
+
+    The recommendation is the last rung that PASSES before the first FAIL, so a rung is
+    never recommended above an unmet lower rung. ``next_rung`` is that first failing rung
+    (the immediate growth target) and ``blocking_keypoints`` are its non-ok keypoints.
+    When every rung passes, the recommendation is the top rung with no next/blockers.
+    When the baseline rung fails, ``recommended_rung`` is None.
+    """
+    recommended: str | None = None
+    for verdict in verdicts:
+        if verdict.verdict != "PASS":
+            return RungRecommendation(
+                recommended_rung=recommended,
+                next_rung=verdict.rung,
+                blocking_keypoints=verdict.nonok_keypoints,
+            )
+        recommended = verdict.rung
+    return RungRecommendation(
+        recommended_rung=recommended, next_rung=None, blocking_keypoints=()
+    )
+
+
+def write_promotion_recommendation(rec: RungRecommendation, path: Path) -> None:
+    """Write the promotion recommendation as an additive JSON artifact."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "recommended_rung": rec.recommended_rung,
+        "next_rung": rec.next_rung,
+        "blocking_keypoints": list(rec.blocking_keypoints),
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def write_rung_verdict_report(verdicts: list[RungVerdict], path: Path) -> None:
@@ -421,6 +465,10 @@ def main() -> int:
     )
     rung_verdicts = aggregate_rung_verdicts(summaries)
     write_rung_verdict_report(rung_verdicts, args.output_dir / "rung_verdicts.csv")
+    recommendation = recommend_promotion_rung(rung_verdicts)
+    write_promotion_recommendation(
+        recommendation, args.output_dir / "promotion_recommendation.json"
+    )
     write_evaluation_metadata(
         path=args.output_dir / "evaluation_metadata.json",
         candidate_model=args.model,
@@ -446,6 +494,22 @@ def main() -> int:
     for v in rung_verdicts:
         blocker = "" if v.weakest_keypoint is None else f" (weakest: {v.weakest_keypoint})"
         print(f"  {v.rung}: {v.verdict}{blocker}")
+    if recommendation.recommended_rung is None:
+        blockers = ", ".join(recommendation.blocking_keypoints) or "unknown"
+        print(
+            f"Recommended promotion rung: none "
+            f"({recommendation.next_rung} not met; blockers: {blockers})"
+        )
+    elif recommendation.next_rung is None:
+        print(
+            f"Recommended promotion rung: {recommendation.recommended_rung} (all rungs pass)"
+        )
+    else:
+        blockers = ", ".join(recommendation.blocking_keypoints) or "unknown"
+        print(
+            f"Recommended promotion rung: {recommendation.recommended_rung} "
+            f"(blocked from {recommendation.next_rung} by: {blockers})"
+        )
     print(f"Output: {args.output_dir}")
     return 0 if failed == 0 else 1
 
