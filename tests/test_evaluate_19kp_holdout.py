@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from scripts.evaluate_19kp_holdout import (
     KEYPOINT_NAMES,
     aggregate_rung_verdicts,
+    missing_image_summary,
     most_problematic_keypoint,
     recommend_promotion_rung,
     summarize_prediction,
@@ -251,6 +252,28 @@ def test_write_rung_verdict_report_emits_one_row_per_rung(tmp_path: Path) -> Non
     assert rows["13KP"]["verdict"] == "PASS"
     assert rows["15KP"]["verdict"] == "FAIL"
     assert rows["15KP"]["weakest_keypoint"] == "panel_front"
+
+
+def test_missing_image_summary_marks_all_target_keypoints_missing() -> None:
+    summary = missing_image_summary(Path("gone.jpg"))
+
+    assert summary.status == "FAIL"
+    assert set(summary.keypoint_states) == set(KEYPOINT_NAMES)
+    assert all(state == "missing" for state in summary.keypoint_states.values())
+    assert all(conf is None for conf in summary.keypoint_confidences.values())
+
+
+def test_missing_image_counts_in_diagnostics_not_treated_as_clean() -> None:
+    # One missing image alongside otherwise-clean predictions must not report
+    # "all keypoints ok" — the missing row participates in the diagnostics.
+    summaries = [
+        summarize_prediction(Path("ok.jpg"), _result(), confidence_threshold=0.25),
+        missing_image_summary(Path("gone.jpg")),
+    ]
+
+    assert most_problematic_keypoint(summaries) is not None
+    verdicts = {v.rung: v for v in aggregate_rung_verdicts(summaries)}
+    assert verdicts["7KP"].verdict == "FAIL"  # missing image fails even the baseline
 
 
 def test_recommend_promotion_rung_recommends_top_when_all_pass() -> None:

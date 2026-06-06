@@ -146,6 +146,27 @@ def summarize_prediction(
     )
 
 
+def missing_image_summary(image_path: Path, target_rung: str = "19KP") -> PredictionSummary:
+    """Summary for a holdout image that could not be read.
+
+    The strict gate already fails it; we also mark every target-rung keypoint as
+    KP_MISSING so the per-keypoint and per-rung diagnostics count it instead of
+    silently ignoring a row with an empty state map.
+    """
+    contract = get_side_view_rung_contract(target_rung)
+    return PredictionSummary(
+        image=image_path,
+        target_rung=contract.name,
+        kps_detected=0,
+        min_conf=None,
+        status="FAIL",
+        active_rung_status="FAIL",
+        warnings=["image_missing"],
+        keypoint_confidences={label: None for label in contract.labels},
+        keypoint_states={label: KP_MISSING for label in contract.labels},
+    )
+
+
 def _fmt_conf(value: float | None) -> str:
     return "" if value is None else f"{value:.4f}"
 
@@ -403,17 +424,7 @@ def evaluate_holdout(
 
     for image_path in images:
         if not image_path.exists():
-            summaries.append(
-                PredictionSummary(
-                    image=image_path,
-                    target_rung=get_side_view_rung_contract(target_rung).name,
-                    kps_detected=0,
-                    min_conf=None,
-                    status="FAIL",
-                    active_rung_status="FAIL",
-                    warnings=["image_missing"],
-                )
-            )
+            summaries.append(missing_image_summary(image_path, target_rung))
             continue
 
         result = model.predict(
