@@ -35,6 +35,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      # Hosted runners start from a clean checkout; the images and wheel model
+      # are gitignored and only persist on the self-hosted GCP runner. When the
+      # repo variable GDRIVE_DATASET_URL is set, pull them from a public Drive
+      # ZIP. The script is idempotent, so on the GCP runner (data already on
+      # disk) it is a no-op.
+      - name: Provision dataset from Google Drive
+        if: ${{ vars.GDRIVE_DATASET_URL != '' }}
+        run: |
+          python scripts/sync_dataset_from_gdrive.py --url "${{ vars.GDRIVE_DATASET_URL }}"
+
       - name: Cache Hugging Face models
         uses: actions/cache@v4
         with:
@@ -79,11 +89,15 @@ jobs:
         run: |
           echo "Agent1 labeling skipped because no accessible wheel model is available in this checkout."
 
-      - name: Upload labeling logs
+      # Hosted runners are ephemeral, so the screening JSON this run produces
+      # does not survive to the (separate) training run. Upload it as an
+      # artifact alongside the logs so the labeling output is retrievable.
+      - name: Upload labeling logs and screening JSON
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: labeling-logs-${{ github.run_number }}
+          name: labeling-output-${{ github.run_number }}
           path: |
             logs/
+            yolo_training/side_view_dataset/labelme_json_stanford_screening/
           if-no-files-found: ignore
