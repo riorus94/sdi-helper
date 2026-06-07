@@ -62,3 +62,13 @@ def test_decide_promotion_holds_and_names_blockers_when_target_fails():
 def test_decide_promotion_rejects_unknown_rung():
     with pytest.raises(ValueError):
         decide_promotion(_verdicts(_result()), "8KP")
+
+
+def test_decide_promotion_holds_when_target_rung_has_no_evidence():
+    # Valid rung, but the holdout evaluation produced no verdicts for it.
+    # CONTEXT.md decision: missing evidence => hold (never a silent promote/crash).
+    decision = decide_promotion([], "19KP")
+
+    assert decision.promote is False
+    assert decision.recommended_rung is None
+    assert "evidence" in decision.reason.lower()

@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from scripts.evaluate_19kp_holdout import RungVerdict, recommend_promotion_rung
+from sdi_helper.domain.geometry.side_view_keypoint_contract import SIDE_VIEW_RUNGS
 
 
 @dataclass
@@ -24,9 +25,20 @@ class PromotionDecision:
 
 def decide_promotion(verdicts: list[RungVerdict], target_rung: str) -> PromotionDecision:
     """Decide promote/hold for ``target_rung`` from the per-rung verdicts."""
+    if target_rung not in SIDE_VIEW_RUNGS:
+        raise ValueError(f"Unknown target rung: {target_rung!r}")
+
     target = next((v for v in verdicts if v.rung == target_rung), None)
     if target is None:
-        raise ValueError(f"Unknown target rung: {target_rung!r}")
+        # Valid rung, but the holdout evaluation produced no verdict for it.
+        # Missing evidence => hold (CONTEXT.md), never a silent promote.
+        return PromotionDecision(
+            target_rung=target_rung,
+            promote=False,
+            recommended_rung=None,
+            blocking_keypoints=(),
+            reason=f"insufficient holdout evidence for {target_rung}",
+        )
 
     recommendation = recommend_promotion_rung(verdicts)
     promote = target.verdict == "PASS"
