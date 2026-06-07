@@ -140,15 +140,35 @@ jobs:
         run: |
           python yolo_training/train_pose.py
 
+      - name: Verify trained model produced
+        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels == 'true' && vars.GDRIVE_DATASET_URL != '' }}
+        shell: bash
+        run: |
+          if [ -z "$(find yolo_training/runs -type f -name '*.pt' 2>/dev/null | head -n 1)" ]; then
+            echo "::error::Training ran but produced no model weights (*.pt) under yolo_training/runs."
+            exit 1
+          fi
+          echo "Trained model weights found under yolo_training/runs."
+
       - name: Skip note (no annotations)
         if: ${{ steps.pose_input.outputs.should_train != 'true' }}
+        shell: bash
         run: |
           echo "Pose training skipped due to empty annotation JSON sources."
+          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
+            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but no annotation JSON was selected — check the dataset ZIP, the screening subset, or the raw-fallback opt-in."
+            exit 1
+          fi
 
       - name: Skip note (no converted pose labels)
         if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels != 'true' }}
+        shell: bash
         run: |
           echo "Pose training skipped because conversion produced zero pose label txt files."
+          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
+            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but conversion produced zero pose labels — check that provisioned images match the LabelMe JSON stems."
+            exit 1
+          fi
 
       - name: Upload training artifacts
         if: always()
@@ -274,15 +294,35 @@ jobs:
         run: |
           python yolo_training/train_pose.py
 
+      - name: Verify trained model produced
+        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels == 'true' && vars.GDRIVE_DATASET_URL != '' }}
+        shell: bash
+        run: |
+          if [ -z "$(find yolo_training/runs -type f -name '*.pt' 2>/dev/null | head -n 1)" ]; then
+            echo "::error::Training ran but produced no model weights (*.pt) under yolo_training/runs."
+            exit 1
+          fi
+          echo "Trained model weights found under yolo_training/runs."
+
       - name: Skip note (no annotations)
         if: ${{ steps.pose_input.outputs.should_train != 'true' }}
+        shell: bash
         run: |
           echo "Pose training skipped due to empty annotation JSON sources."
+          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
+            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but no annotation JSON was selected — check the dataset ZIP, the screening subset, or the raw-fallback opt-in."
+            exit 1
+          fi
 
       - name: Skip note (no converted pose labels)
         if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels != 'true' }}
+        shell: bash
         run: |
           echo "Pose training skipped because conversion produced zero pose label txt files."
+          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
+            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but conversion produced zero pose labels — check that provisioned images match the LabelMe JSON stems."
+            exit 1
+          fi
 
       - name: Upload training artifacts
         if: always()
