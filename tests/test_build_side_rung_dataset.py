@@ -1,5 +1,7 @@
 import json
 
+from PIL import Image
+
 from scripts.build_side_rung_dataset import main
 from yolo_training.labelme_to_yolo_pose import DEFAULT_KP_ORDER
 
@@ -44,3 +46,28 @@ def test_build_side_rung_dataset_writes_rung_config_and_labels(tmp_path):
     summary = json.loads((out_dir / "conversion_summary.json").read_text(encoding="utf-8"))
     assert summary["target_rung"] == "9KP"
     assert summary["converted_train"] == 2
+
+
+def test_build_side_rung_dataset_stages_split_images_alongside_labels(tmp_path):
+    input_dir = tmp_path / "labelme_json"
+    input_dir.mkdir()
+    img_dir = tmp_path / "images"
+    img_dir.mkdir()
+    _write_valid_19kp_json(input_dir, "car_01")
+    Image.new("RGB", (320, 160)).save(img_dir / "car_01.jpg")
+    out_dir = tmp_path / "rung_dataset"
+
+    exit_code = main(
+        [
+            "--input", str(input_dir),
+            "--img-dir", str(img_dir),
+            "--output", str(out_dir),
+            "--rung", "9KP",
+            "--val-fraction", "0",
+        ]
+    )
+
+    assert exit_code == 0
+    # image is staged next to its label so the dataset_pose.yaml is trainable
+    assert (out_dir / "labels" / "train" / "car_01.txt").exists()
+    assert (out_dir / "images" / "train" / "car_01.jpg").exists()
