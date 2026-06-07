@@ -64,11 +64,26 @@ nothing changes until this is set.
 python scripts/sync_dataset_from_gdrive.py --url "$GDRIVE_DATASET_URL"
 ```
 
-## Limitation (training handoff)
+## Training handoff (raw-JSON fallback)
 
 Hosted runners are ephemeral: the screening JSON that `agent1-labeling-10m`
-produces does not survive to the separate `pose-training-20m` run. The labeling
-workflow therefore uploads its screening JSON as a build artifact
-(`labeling-output-<run>`). Wiring training to consume that output (or committing
-the screened subset) is a separate follow-up; this change only unblocks the
-labeling pipeline's inputs.
+produces does not survive to the separate `pose-training-20m` run. Two things
+bridge that gap:
+
+1. `agent1-labeling-10m` uploads its screening JSON as a build artifact
+   (`labeling-output-<run>`), so the labeling result is retrievable.
+2. `pose-training-20m`'s input selection **prefers** the CLIP-gated screening
+   subset, but **falls back** to the committed raw LabelMe JSON
+   (`yolo_training/side_view_dataset/labelme_json`, 79 files) when the screening
+   subset is empty. So once images are provisioned from Drive, a GitHub-hosted
+   run trains a real model instead of green-skipping.
+
+On the GCP runner the screening subset is present, so the fallback never
+triggers and behaviour is unchanged. Training on the raw subset is unscreened
+(no CLIP orientation gate) — fine for bootstrap/CPU verification; promote to
+screened data for production runs.
+
+> **ZIP note for the fallback path:** the raw JSONs reference image names like
+> `000001.jpg`, so the images you put under `dataset_raw/images/train/side/` in
+> the ZIP must match those stems (this is exactly the `dataset_raw` set the GCP
+> runner already holds).

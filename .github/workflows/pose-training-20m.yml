@@ -54,18 +54,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      # Hosted runners start from a clean checkout; the images are gitignored and
+      # only persist on the self-hosted GCP runner. When the repo variable
+      # GDRIVE_DATASET_URL is set, pull them from a public Drive ZIP. The script
+      # is idempotent, so on the GCP runner (data already on disk) it is a no-op.
+      - name: Provision dataset from Google Drive
+        if: ${{ vars.GDRIVE_DATASET_URL != '' }}
+        run: |
+          python scripts/sync_dataset_from_gdrive.py --url "${{ vars.GDRIVE_DATASET_URL }}"
+
       - name: Select LabelMe JSON input directory
         id: pose_input
         shell: bash
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
+          fallback="yolo_training/side_view_dataset/labelme_json"
 
           primary_count=$(find "$primary" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
+          fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
+          # Prefer the CLIP-gated screening subset (produced by agent1-labeling and
+          # persisted on the GCP runner). On a hosted runner that subset is absent,
+          # so fall back to the committed raw LabelMe JSON: with images provisioned
+          # from Drive this keeps training self-contained instead of green-skipping.
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
+            echo "Using CLIP-gated screening JSON: $selected ($selected_count files)"
+          elif [ "${fallback_count}" -gt 0 ]; then
+            selected="$fallback"
+            selected_count="$fallback_count"
+            echo "Screening JSON empty; falling back to committed raw LabelMe JSON: $selected ($selected_count files)"
           else
             selected=""
             selected_count="0"
@@ -76,10 +96,9 @@ jobs:
 
           if [ "$selected_count" -gt 0 ]; then
             echo "should_train=true" >> "$GITHUB_OUTPUT"
-            echo "Using LabelMe JSON source: $selected ($selected_count files)"
           else
             echo "should_train=false" >> "$GITHUB_OUTPUT"
-            echo "No CLIP-gated Stanford screening JSON files found in $primary. Skipping pose training for this run."
+            echo "No screening or raw LabelMe JSON found. Skipping pose training for this run."
           fi
 
       - name: Build 5KP YOLO pose labels from LabelMe JSON
@@ -162,18 +181,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      # Hosted runners start from a clean checkout; the images are gitignored and
+      # only persist on the self-hosted GCP runner. When the repo variable
+      # GDRIVE_DATASET_URL is set, pull them from a public Drive ZIP. The script
+      # is idempotent, so on the GCP runner (data already on disk) it is a no-op.
+      - name: Provision dataset from Google Drive
+        if: ${{ vars.GDRIVE_DATASET_URL != '' }}
+        run: |
+          python scripts/sync_dataset_from_gdrive.py --url "${{ vars.GDRIVE_DATASET_URL }}"
+
       - name: Select LabelMe JSON input directory
         id: pose_input
         shell: bash
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
+          fallback="yolo_training/side_view_dataset/labelme_json"
 
           primary_count=$(find "$primary" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
+          fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
+          # Prefer the CLIP-gated screening subset (produced by agent1-labeling and
+          # persisted on the GCP runner). On a hosted runner that subset is absent,
+          # so fall back to the committed raw LabelMe JSON: with images provisioned
+          # from Drive this keeps training self-contained instead of green-skipping.
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
+            echo "Using CLIP-gated screening JSON: $selected ($selected_count files)"
+          elif [ "${fallback_count}" -gt 0 ]; then
+            selected="$fallback"
+            selected_count="$fallback_count"
+            echo "Screening JSON empty; falling back to committed raw LabelMe JSON: $selected ($selected_count files)"
           else
             selected=""
             selected_count="0"
@@ -184,10 +223,9 @@ jobs:
 
           if [ "$selected_count" -gt 0 ]; then
             echo "should_train=true" >> "$GITHUB_OUTPUT"
-            echo "Using LabelMe JSON source: $selected ($selected_count files)"
           else
             echo "should_train=false" >> "$GITHUB_OUTPUT"
-            echo "No CLIP-gated Stanford screening JSON files found in $primary. Skipping pose training for this run."
+            echo "No screening or raw LabelMe JSON found. Skipping pose training for this run."
           fi
 
       - name: Build 5KP YOLO pose labels from LabelMe JSON
