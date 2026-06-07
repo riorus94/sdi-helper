@@ -20,13 +20,14 @@ class LocalFolderSource:
         # STANFORD_CARS_EXTRACTED_ROOT takes priority for source input.
         # LOCAL_DATASET_ROOT is the pipeline output root and must not
         # shadow the Stanford source path.
-        configured = root or os.getenv(
+        default_root = os.getenv(
             "STANFORD_CARS_EXTRACTED_ROOT",
             os.getenv(
                 "LOCAL_DATASET_ROOT",
                 str(Path.home() / "Downloads" / "stanford-cars-dataset"),
             ),
         )
+        configured: str | Path = root if root else default_root
         self._base_root = Path(configured).expanduser().resolve()
         self._cars_train_root = self._resolve_cars_train_root(self._base_root)
         self._images = self._collect_images(self._cars_train_root)

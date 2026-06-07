@@ -53,7 +53,7 @@ class ClipEmbeddingIndex:
         return arr
 
     def _compute(self, img: np.ndarray) -> np.ndarray:
-        return clip_image_embedding(img, self.model_name)
+        return np.asarray(clip_image_embedding(img, self.model_name), dtype=np.float32)
 
     def is_duplicate(self, img: np.ndarray, view: ImageView | None = None) -> bool:
         if view is None:

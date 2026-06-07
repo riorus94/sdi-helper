@@ -1,6 +1,6 @@
 """S3Storage adapter - AWS S3 backend. Implemented in Sprint 2 - Day 6."""
 
-from typing import Iterator
+from typing import Any, Iterator
 
 
 class S3Storage:
@@ -15,7 +15,7 @@ class S3Storage:
     def put_text(self, key: str, text: str) -> str:
         raise NotImplementedError("Sprint 2 - Day 6")
 
-    def put_json(self, key: str, payload: dict) -> str:
+    def put_json(self, key: str, payload: dict[str, Any]) -> str:
         raise NotImplementedError("Sprint 2 - Day 6")
 
     def get_bytes(self, key: str) -> bytes | None:

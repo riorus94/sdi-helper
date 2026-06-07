@@ -8,7 +8,7 @@ Protocol (stable as of 2025-2026):
 
 import re
 import time
-from typing import Iterator
+from typing import Any, Iterator
 from urllib.parse import quote_plus
 
 import requests
@@ -62,7 +62,7 @@ class DuckDuckGoSource:
             return
 
         emitted: set[str] = set()
-        next_params: dict = {
+        next_params: dict[str, Any] = {
             "l": "wt-wt",
             "o": "json",
             "q": query,

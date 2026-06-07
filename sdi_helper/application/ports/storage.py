@@ -1,4 +1,4 @@
-from typing import Iterator, Protocol
+from typing import Any, Iterator, Protocol
 
 
 class Storage(Protocol):
@@ -6,7 +6,7 @@ class Storage(Protocol):
 
     def put_text(self, key: str, text: str) -> str: ...
 
-    def put_json(self, key: str, payload: dict) -> str: ...
+    def put_json(self, key: str, payload: dict[str, Any]) -> str: ...
 
     def get_bytes(self, key: str) -> bytes | None: ...
 

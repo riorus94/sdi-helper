@@ -93,7 +93,7 @@ def _load_scrape_exceptions(config_dir: Path) -> tuple[set[str], set[str]]:
     return (urls, stems)
 
 
-def _build_source(name: str):
+def _build_source(name: str) -> ImageSource:
     if name == "local":
         return LocalFolderSource()
     if name == "google":
