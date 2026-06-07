@@ -115,3 +115,20 @@ def test_main_is_noop_without_url(monkeypatch, capsys):
     monkeypatch.delenv("GDRIVE_DATASET_URL", raising=False)
     assert main([]) == 0
     assert "nothing to provision" in capsys.readouterr().out.lower()
+
+
+def test_provision_extracts_screening_subset_when_present(tmp_path):
+    screening_rel = "yolo_training/side_view_dataset/labelme_json_stanford_screening"
+
+    def fake_downloader(file_id, dest_zip):
+        with zipfile.ZipFile(dest_zip, "w") as archive:
+            archive.writestr(f"{_IMG_REL}/000001.jpg", b"\xff\xd8jpeg")
+            archive.writestr(_MODEL_REL, b"weights")
+            archive.writestr(f"{screening_rel}/000001.json", b"{}")
+
+    ran = provision("SCREENID", tmp_path, downloader=fake_downloader)
+
+    assert ran is True
+    # the screening subset (training's primary input) lands in place alongside images
+    assert (tmp_path / screening_rel / "000001.json").is_file()
+    assert (tmp_path / _IMG_REL / "000001.jpg").is_file()

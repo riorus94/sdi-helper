@@ -15,22 +15,32 @@ from a **public** Google Drive link (via `gdown`, no credentials).
 
 ## 1) Build the ZIP
 
-Zip the two artifacts at their real repo-relative paths:
+Zip the artifacts at their real repo-relative paths:
 
 ```
 dataset.zip
 ├── dataset_raw/images/train/side/000001.jpg
 ├── dataset_raw/images/train/side/000002.jpg
 ├── ...
-└── yolo_training/runs/roboflow_v3_local/weights/best.pt
+├── yolo_training/runs/roboflow_v3_local/weights/best.pt
+└── yolo_training/side_view_dataset/labelme_json_stanford_screening/   (optional)
+    ├── 000001.json
+    └── ...
 ```
+
+The images and `best.pt` are required. **Including the CLIP-screened subset
+(`labelme_json_stanford_screening/`) is recommended** — when present, a hosted
+training run trains on the *screened* data (its primary input) instead of
+needing the raw-fallback opt-in. Omit it and training falls back to the raw
+subset only if you opt in (see below).
 
 From a machine that has the data (e.g. the GCP runner), at the repo root:
 
 ```bash
 zip -r dataset.zip \
   dataset_raw/images/train/side \
-  yolo_training/runs/roboflow_v3_local/weights/best.pt
+  yolo_training/runs/roboflow_v3_local/weights/best.pt \
+  yolo_training/side_view_dataset/labelme_json_stanford_screening
 ```
 
 ## 2) Upload to Google Drive and share
