@@ -70,3 +70,8 @@ scrape.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code / agent tooling (injected into the workspace by the environment, not project files)
+.claude/
+.agents/
+skills-lock.json
