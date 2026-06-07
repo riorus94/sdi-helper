@@ -38,3 +38,25 @@ def test_orchestrate_promotion_holds_and_exit_code_is_nonzero(tmp_path):
     # a hold must fail the run clearly (US10)
     assert exit_code_for(decision) == 1
     assert (tmp_path / "promotion_record.jsonl").read_text().strip()
+
+
+def test_parse_args_matches_the_make_promote_rung_contract():
+    # Locks the CLI flags the `make promote-rung` target passes.
+    from scripts.run_promotion import _parse_args
+
+    ns = _parse_args(
+        [
+            "--model", "best.pt",
+            "--manifest", "holdout.txt",
+            "--image-dir", "imgs",
+            "--target-rung", "9KP",
+            "--run-dir", "out",
+            "--confidence-threshold", "0.4",
+            "--device", "cpu",
+        ]
+    )
+    assert str(ns.model) == "best.pt"
+    assert str(ns.manifest) == "holdout.txt"
+    assert ns.target_rung == "9KP"
+    assert str(ns.run_dir) == "out"
+    assert ns.confidence_threshold == 0.4
