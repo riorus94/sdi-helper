@@ -1,6 +1,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from scripts.evaluate_19kp_holdout import aggregate_rung_verdicts, summarize_prediction
 from scripts.promote_rung import decide_promotion
 
@@ -35,9 +37,6 @@ def _verdicts(*results):
         for i, r in enumerate(results)
     ]
     return aggregate_rung_verdicts(summaries)
-
-
-import pytest
 
 
 def test_decide_promotion_promotes_when_target_rung_passes():
