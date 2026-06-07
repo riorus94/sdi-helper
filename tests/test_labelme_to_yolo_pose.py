@@ -190,6 +190,64 @@ def test_convert_accepted_19kp_dataset_rejects_missing_and_unknown_labels(tmp_pa
     assert "duplicate_labels" in reasons["duplicate.json"]
 
 
+def _write_19kp_json_with_offframe(tmp_path, name: str, off_label: str = "roof_apex"):
+    shapes: list[dict] = []
+    for idx, label in enumerate(DEFAULT_KP_ORDER):
+        if label == off_label:
+            shapes.append(_point(label, 50.0, -50.0))  # cropped off the top edge
+        else:
+            shapes.append(_point(label, float(20 + idx * 2), float(30 + idx)))
+    json_path = tmp_path / f"{name}.json"
+    json_path.write_text(
+        json.dumps(
+            {"imagePath": f"{name}.jpg", "imageWidth": 320, "imageHeight": 160, "shapes": shapes}
+        ),
+        encoding="utf-8",
+    )
+    return json_path
+
+
+def test_conversion_summary_counts_images_with_off_frame_keypoints(tmp_path):
+    input_dir = tmp_path / "accepted"
+    output_dir = tmp_path / "pose"
+    input_dir.mkdir()
+    _write_19kp_json(input_dir, "clean")  # all 19 keypoints in-frame
+    _write_19kp_json_with_offframe(input_dir, "cropped")  # one off-frame keypoint
+
+    summary = convert_accepted_19kp_dataset(
+        input_dir=input_dir,
+        img_dir=tmp_path / "images",
+        output_dir=output_dir,
+        val_fraction=0.0,
+    )
+
+    assert summary["images_with_off_frame_keypoints"] == 1
+    assert summary["off_frame_keypoints_total"] == 1
+    # persisted to the summary artifact, existing fields intact
+    data = json.loads((output_dir / "conversion_summary.json").read_text(encoding="utf-8"))
+    assert data["images_with_off_frame_keypoints"] == 1
+    assert data["off_frame_keypoints_total"] == 1
+    assert data["converted_train"] == 2
+
+
+def test_conversion_summary_off_frame_count_is_zero_when_all_in_frame(tmp_path):
+    input_dir = tmp_path / "accepted"
+    output_dir = tmp_path / "pose"
+    input_dir.mkdir()
+    _write_19kp_json(input_dir, "clean_a")
+    _write_19kp_json(input_dir, "clean_b")
+
+    summary = convert_accepted_19kp_dataset(
+        input_dir=input_dir,
+        img_dir=tmp_path / "images",
+        output_dir=output_dir,
+        val_fraction=0.0,
+    )
+
+    assert summary["images_with_off_frame_keypoints"] == 0
+    assert summary["off_frame_keypoints_total"] == 0
+
+
 def test_parse_keypoint_order_supports_side_view_rung_names() -> None:
     kp_order = parse_keypoint_order("9KP")
 
@@ -270,6 +328,8 @@ def test_convert_accepted_19kp_dataset_writes_holdout_manifest(tmp_path):
         "converted_val": 2,
         "converted_holdout": 2,
         "rejected": 0,
+        "images_with_off_frame_keypoints": 0,
+        "off_frame_keypoints_total": 0,
         "holdout_manifest": "holdout_manifest.txt",
     }
 

@@ -202,12 +202,18 @@ def convert_accepted_19kp_dataset(
     converted_val = 0
     converted_holdout = 0
     holdout_images: list[str] = []
+    images_with_off_frame = 0
+    off_frame_keypoints_total = 0
     rejected = sum(1 for row in report_rows if row["status"] == "rejected")
 
     for json_path in valid_jsons:
         split = "val" if json_path.name in val_set else "train"
         target_dir = val_dir if split == "val" else train_dir
-        ok = convert_json(json_path, img_dir, target_dir, kp_order)
+        off_frame_kps: list[str] = []
+        ok = convert_json(json_path, img_dir, target_dir, kp_order, off_frame_out=off_frame_kps)
+        if off_frame_kps:
+            images_with_off_frame += 1
+            off_frame_keypoints_total += len(off_frame_kps)
         if not ok:
             rejected += 1
             report_rows.append(
@@ -272,6 +278,8 @@ def convert_accepted_19kp_dataset(
         "converted_val": converted_val,
         "converted_holdout": converted_holdout,
         "rejected": rejected,
+        "images_with_off_frame_keypoints": images_with_off_frame,
+        "off_frame_keypoints_total": off_frame_keypoints_total,
         "holdout_manifest": manifest_path.name,
     }
     (output_dir / "conversion_summary.json").write_text(
@@ -400,10 +408,14 @@ def convert_json(
     img_dir: pathlib.Path,
     out_dir: pathlib.Path,
     kp_order: list[str],
+    off_frame_out: list[str] | None = None,
 ) -> bool:
     """Convert a single LabelMe JSON to YOLO-pose .txt.
 
-    Returns True on success, False if the file is skipped.
+    Returns True on success, False if the file is skipped. When ``off_frame_out``
+    is provided, the names of any off-frame (clamped, not-labelled) keypoints for
+    this image are appended to it on successful conversion, so callers can track
+    label quality without re-parsing.
     """
     with json_path.open() as f:
         data = json.load(f)
@@ -502,6 +514,8 @@ def convert_json(
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / (img_stem + ".txt")
     out_path.write_text(line + "\n")
+    if off_frame_out is not None:
+        off_frame_out.extend(off_frame)
     return True
 
 
