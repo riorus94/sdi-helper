@@ -25,7 +25,7 @@ Edit `config/quota.yaml`, `config/queries.yaml`, `config/thresholds.yaml` to tas
 # Local storage (default)
 make scrape
 
-# To S3 (after Sprint 2 - Day 6)
+# To S3
 STORAGE_BACKEND=s3 S3_BUCKET=my-bucket make scrape
 
 # Build dataset.yaml + urls.csv from manifests
