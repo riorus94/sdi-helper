@@ -66,6 +66,10 @@ jobs:
       - name: Select LabelMe JSON input directory
         id: pose_input
         shell: bash
+        env:
+          # Raw fallback is opt-in: an explicit repo variable, or a manual
+          # github-cpu dispatch. Scheduled runs stay screened-only.
+          ALLOW_RAW_FALLBACK: ${{ vars.POSE_ALLOW_RAW_FALLBACK == '1' || (github.event_name == 'workflow_dispatch' && inputs.runner_target == 'github-cpu') }}
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
@@ -75,20 +79,23 @@ jobs:
           fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
           # Prefer the CLIP-gated screening subset (produced by agent1-labeling and
-          # persisted on the GCP runner). On a hosted runner that subset is absent,
-          # so fall back to the committed raw LabelMe JSON: with images provisioned
-          # from Drive this keeps training self-contained instead of green-skipping.
+          # persisted on the GCP runner). The committed raw LabelMe JSON is an
+          # UNSCREENED fallback: only used when explicitly opted in, so scheduled
+          # production runs never silently train on unscreened data.
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
             echo "Using CLIP-gated screening JSON: $selected ($selected_count files)"
-          elif [ "${fallback_count}" -gt 0 ]; then
+          elif [ "${fallback_count}" -gt 0 ] && [ "${ALLOW_RAW_FALLBACK}" = "true" ]; then
             selected="$fallback"
             selected_count="$fallback_count"
-            echo "Screening JSON empty; falling back to committed raw LabelMe JSON: $selected ($selected_count files)"
+            echo "Screening JSON empty; raw fallback opted in -> using committed raw LabelMe JSON: $selected ($selected_count files)"
           else
             selected=""
             selected_count="0"
+            if [ "${fallback_count}" -gt 0 ]; then
+              echo "Screening JSON empty and raw fallback not opted in (set POSE_ALLOW_RAW_FALLBACK=1 or dispatch github-cpu). Skipping."
+            fi
           fi
 
           echo "selected_json_dir=$selected" >> "$GITHUB_OUTPUT"
@@ -193,6 +200,10 @@ jobs:
       - name: Select LabelMe JSON input directory
         id: pose_input
         shell: bash
+        env:
+          # Raw fallback is opt-in: an explicit repo variable, or a manual
+          # github-cpu dispatch. Scheduled runs stay screened-only.
+          ALLOW_RAW_FALLBACK: ${{ vars.POSE_ALLOW_RAW_FALLBACK == '1' || (github.event_name == 'workflow_dispatch' && inputs.runner_target == 'github-cpu') }}
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
@@ -202,20 +213,23 @@ jobs:
           fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
           # Prefer the CLIP-gated screening subset (produced by agent1-labeling and
-          # persisted on the GCP runner). On a hosted runner that subset is absent,
-          # so fall back to the committed raw LabelMe JSON: with images provisioned
-          # from Drive this keeps training self-contained instead of green-skipping.
+          # persisted on the GCP runner). The committed raw LabelMe JSON is an
+          # UNSCREENED fallback: only used when explicitly opted in, so scheduled
+          # production runs never silently train on unscreened data.
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
             echo "Using CLIP-gated screening JSON: $selected ($selected_count files)"
-          elif [ "${fallback_count}" -gt 0 ]; then
+          elif [ "${fallback_count}" -gt 0 ] && [ "${ALLOW_RAW_FALLBACK}" = "true" ]; then
             selected="$fallback"
             selected_count="$fallback_count"
-            echo "Screening JSON empty; falling back to committed raw LabelMe JSON: $selected ($selected_count files)"
+            echo "Screening JSON empty; raw fallback opted in -> using committed raw LabelMe JSON: $selected ($selected_count files)"
           else
             selected=""
             selected_count="0"
+            if [ "${fallback_count}" -gt 0 ]; then
+              echo "Screening JSON empty and raw fallback not opted in (set POSE_ALLOW_RAW_FALLBACK=1 or dispatch github-cpu). Skipping."
+            fi
           fi
 
           echo "selected_json_dir=$selected" >> "$GITHUB_OUTPUT"
