@@ -6,7 +6,6 @@ Migration source: pipeline/agents/detector.py
 from typing import Any
 
 import numpy as np
-from ultralytics import YOLO
 
 from sdi_helper.domain.entities.bounding_box import BoundingBox
 from sdi_helper.domain.entities.detection import Detection

@@ -4,6 +4,7 @@ import csv
 import io
 import json
 from dataclasses import dataclass
+from typing import Any
 
 from sdi_helper.application.ports.storage import Storage
 from sdi_helper.domain.services.storage_keys import StorageKeys
@@ -16,8 +17,8 @@ class ManifestAggregator:
     storage: Storage
     keys: StorageKeys
 
-    def _iter_manifests(self) -> list[dict]:
-        rows: list[dict] = []
+    def _iter_manifests(self) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
         prefix = self.keys.manifests_prefix()
         for key in self.storage.list_keys(prefix):
             if not key.endswith(".json"):

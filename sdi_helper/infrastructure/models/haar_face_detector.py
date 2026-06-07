@@ -15,8 +15,11 @@ class HaarFaceDetector:
 
     def _get_cascade(self) -> Any:
         if self._cascade is None:
+            # cv2's bundled type stubs omit the `data` submodule; access it via
+            # an Any alias so it type-checks whether or not cv2 stubs are present.
+            cv2_any: Any = cv2
             self._cascade = cv2.CascadeClassifier(
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+                cv2_any.data.haarcascades + "haarcascade_frontalface_default.xml"
             )
         return self._cascade
 

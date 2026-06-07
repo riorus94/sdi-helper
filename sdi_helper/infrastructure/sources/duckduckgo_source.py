@@ -8,7 +8,7 @@ Protocol (stable as of 2025-2026):
 
 import re
 import time
-from typing import Iterator
+from typing import Any, Iterator
 from urllib.parse import quote_plus
 
 import requests
@@ -62,7 +62,7 @@ class DuckDuckGoSource:
             return
 
         emitted: set[str] = set()
-        next_params: dict = {
+        next_params: dict[str, Any] = {
             "l": "wt-wt",
             "o": "json",
             "q": query,
@@ -106,7 +106,7 @@ class DuckDuckGoSource:
             if not nxt:
                 break
             # `next` is a query string like "l=wt-wt&o=json&q=...&vqd=...&s=50&..."
-            from urllib.parse import parse_qs, urlencode
+            from urllib.parse import parse_qs
             try:
                 parsed = {k: v[0] for k, v in parse_qs(nxt.lstrip("?")).items()}
             except Exception:

@@ -262,20 +262,9 @@ def estimate_keypoints(
     wheel_y_diff = abs(fg_y - rg_y)
     alignment_penalty = 0.0 if wheel_y_diff <= det_radius * 0.5 else 0.3
 
-    # Normalize all non-wheel landmarks around rear wheel ground. X is mirrored
-    # for left-looking side views while Y scales by detected wheel radius.
-    ref_fwc = REFERENCE_TEMPLATE_PX["front_wheel_center"]
-    ref_rwc = REFERENCE_TEMPLATE_PX["rear_wheel_center"]
-    ref_fwg = REFERENCE_TEMPLATE_PX["front_wheel_ground"]
-    ref_rwg = REFERENCE_TEMPLATE_PX["rear_wheel_ground"]
-
-    ref_wheelbase = abs(ref_fwc[0] - ref_rwc[0])
-    ref_front_radius = abs(ref_fwg[1] - ref_fwc[1])
-    ref_rear_radius = abs(ref_rwg[1] - ref_rwc[1])
-    ref_radius = (ref_front_radius + ref_rear_radius) / 2.0
-
-    sy = det_radius / ref_radius if ref_radius > 1 and det_radius > 1 else 1.0
-
+    # Non-wheel landmarks are estimated by _ratio_reference_estimate, which scales
+    # offsets by the detected wheel diameter (det_radius). The template-normalization
+    # locals that used to live here were dead — that scaling now lives in the ratios.
     geometry_score = _geometry_score(det_wheelbase, det_radius, wheel_y_diff)
     
     # Estimate all keypoints

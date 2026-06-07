@@ -5,6 +5,7 @@ import yaml
 
 from yolo_training.labelme_to_yolo_pose import (
     DEFAULT_KP_ORDER,
+    _normalize_keypoint,
     convert_accepted_19kp_dataset,
     convert_json,
     parse_keypoint_order,
@@ -82,6 +83,39 @@ def _write_19kp_json(
 def _keypoints_from_output(out_path):
     values = [float(v) for v in out_path.read_text(encoding="utf-8").split()]
     return values[5:]
+
+
+def test_normalize_keypoint_in_frame_is_visible() -> None:
+    assert _normalize_keypoint(50.0, 25.0, 200, 100) == (0.25, 0.25, 2.0, True)
+
+
+def test_normalize_keypoint_off_top_is_clamped_and_not_labelled() -> None:
+    # roof cropped off the top of the frame (negative y)
+    x_n, y_n, v, in_frame = _normalize_keypoint(50.0, -30.0, 200, 100)
+    assert v == 0.0
+    assert in_frame is False
+    assert (x_n, y_n) == (0.25, 0.0)  # x kept, y clamped to the edge
+
+
+def test_normalize_keypoint_off_right_is_clamped_and_not_labelled() -> None:
+    x_n, y_n, v, in_frame = _normalize_keypoint(260.0, 50.0, 200, 100)
+    assert v == 0.0 and in_frame is False
+    assert x_n == 1.0  # clamped to the right edge
+
+
+def test_convert_json_marks_offframe_keypoint_not_labelled(tmp_path) -> None:
+    shapes = [_point("roof_apex", 50.0, -30.0), _point("front_bumper", 180.0, 50.0)]
+    json_path = _write_labelme_json(tmp_path, shapes)  # 200x100 image
+    out_dir = tmp_path / "out"
+
+    assert convert_json(json_path, tmp_path, out_dir, DEFAULT_KP_ORDER) is True
+
+    kps = _keypoints_from_output(out_dir / "sample.txt")
+    roof = kps[0:3]  # roof_apex is index 0 in DEFAULT_KP_ORDER
+    bumper = kps[9:12]  # front_bumper is index 3 -> triplet at 9
+    assert roof[2] == 0.0  # off-frame -> not labelled
+    assert 0.0 <= roof[0] <= 1.0 and 0.0 <= roof[1] <= 1.0  # coords clamped valid
+    assert bumper[2] == 2.0  # in-frame keypoint still visible
 
 
 def test_5kp_no_roof_derives_ground_ref_from_wheel_ground_points(tmp_path, capsys):

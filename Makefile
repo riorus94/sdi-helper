@@ -1,7 +1,7 @@
 .PHONY: install test test-domain test-fast test-slow lint type clean \
 	scrape scrape-run scrape-smoke scrape-side scrape-debug \
 	build-dataset inspect side-holdout-gate side-19kp-evaluate side-19kp-gate \
-	side-rung b1-queue-build b1-19kp-accept
+	side-rung b1-queue-build b1-19kp-accept b2-readiness-gate
 
 # Optional CLI args passthrough for scrape-run.
 # Example:
@@ -36,6 +36,12 @@ B1_DRAFT_JSON_DIR ?= yolo_training/side_view_dataset/review_queue/b1_19kp_labeli
 B1_ACCEPTED_JSON_DIR ?= yolo_training/side_view_dataset/labelme_json
 B1_ACCEPTANCE_REPORT ?= yolo_training/side_view_dataset/labelme_json/acceptance_report.csv
 B1_PYTHON ?= poetry run python
+
+B2_CANONICAL_JSON_DIR ?= yolo_training/side_view_dataset/labelme_json
+B2_QUALITY_CSV ?= yolo_training/side_view_dataset/annotation_batches/batch_013/agent1_quality_report.csv
+B2_REPORT ?= yolo_training/side_view_dataset/b2_readiness_report.json
+B2_TARGET_RUNG ?= 19KP
+B2_PYTHON ?= poetry run python
 
 
 
@@ -146,3 +152,14 @@ b1-19kp-accept:
 		--draft-json-dir "$(B1_DRAFT_JSON_DIR)" \
 		--accepted-json-dir "$(B1_ACCEPTED_JSON_DIR)" \
 		--acceptance-report "$(B1_ACCEPTANCE_REPORT)"
+
+# Consolidated go/no-go gate: is the canonical side-view set ready for a B2 retrain?
+# Fails nonzero if any canonical JSON lacks the full keypoint set or any canonical
+# image still carries a HIGH/MEDIUM Agent 1 review flag. Pass several CSVs via
+#   make b2-readiness-gate B2_QUALITY_CSV='batch_a.csv batch_b.csv'
+b2-readiness-gate:
+	$(B2_PYTHON) scripts/gate_b2_readiness.py \
+		--canonical-json-dir "$(B2_CANONICAL_JSON_DIR)" \
+		$(foreach csv,$(B2_QUALITY_CSV),--quality-csv "$(csv)") \
+		--report-out "$(B2_REPORT)" \
+		--target-rung "$(B2_TARGET_RUNG)"

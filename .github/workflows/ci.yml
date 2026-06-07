@@ -41,15 +41,12 @@ jobs:
           pip install -e .
           pip install pytest pytest-cov ruff mypy
 
-      # Lint and type checks are advisory for now: the repo carries pre-existing
-      # ruff/mypy findings (largely missing third-party stubs). They report in CI
-      # without blocking; flip continue-on-error off once the debt is cleared.
-      - name: Lint (ruff) [advisory]
-        continue-on-error: true
+      # Ruff is clean and blocking. mypy stays advisory until its pre-existing
+      # findings (largely missing third-party stubs) are addressed.
+      - name: Lint (ruff)
         run: ruff check sdi_helper tests
 
-      - name: Type check (mypy) [advisory]
-        continue-on-error: true
+      - name: Type check (mypy)
         run: mypy sdi_helper
 
       - name: Tests (pytest)
