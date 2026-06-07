@@ -204,10 +204,13 @@ def convert_accepted_19kp_dataset(
     holdout_images: list[str] = []
     rejected = sum(1 for row in report_rows if row["status"] == "rejected")
 
+    off_frame_images = 0
     for json_path in valid_jsons:
         split = "val" if json_path.name in val_set else "train"
         target_dir = val_dir if split == "val" else train_dir
-        ok = convert_json(json_path, img_dir, target_dir, kp_order)
+        ok, off_frame = convert_json(json_path, img_dir, target_dir, kp_order)
+        if off_frame:
+            off_frame_images += 1
         if not ok:
             rejected += 1
             report_rows.append(
@@ -272,6 +275,7 @@ def convert_accepted_19kp_dataset(
         "converted_val": converted_val,
         "converted_holdout": converted_holdout,
         "rejected": rejected,
+        "off_frame_images": off_frame_images,
         "holdout_manifest": manifest_path.name,
     }
     (output_dir / "conversion_summary.json").write_text(
@@ -400,10 +404,12 @@ def convert_json(
     img_dir: pathlib.Path,
     out_dir: pathlib.Path,
     kp_order: list[str],
-) -> bool:
+) -> tuple[bool, list[str]]:
     """Convert a single LabelMe JSON to YOLO-pose .txt.
 
-    Returns True on success, False if the file is skipped.
+    Returns (written, off_frame_labels): ``written`` is True on success / False
+    if the file is skipped; ``off_frame_labels`` lists keypoints that were outside
+    the image and got clamped + marked not-labelled (empty when none/skipped).
     """
     with json_path.open() as f:
         data = json.load(f)
@@ -424,7 +430,7 @@ def convert_json(
         H = data.get("imageHeight")
         if not W or not H:
             print(f"  SKIP (image not found, no size in JSON): {json_path.name}")
-            return False
+            return False, []
         W, H = int(W), int(H)
     else:
         W, H = _image_size(img_path)
@@ -453,7 +459,7 @@ def convert_json(
 
     if not annotated:
         print(f"  SKIP (no valid points): {json_path.name}")
-        return False
+        return False, []
 
     # Build flat keypoints list: [x_n, y_n, v] × 19
     kp_flat: list[float] = []
@@ -483,7 +489,7 @@ def convert_json(
     # Auto-derive bounding box from visible keypoint extent (with 2 % padding)
     if not xs_visible:
         print(f"  SKIP (all points missing): {json_path.name}")
-        return False
+        return False, []
 
     PAD = 0.02
     x_min = max(0.0, min(xs_visible) - PAD)
@@ -502,7 +508,7 @@ def convert_json(
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / (img_stem + ".txt")
     out_path.write_text(line + "\n")
-    return True
+    return True, off_frame
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -551,7 +557,8 @@ def main(argv: list[str] | None = None) -> None:
 
     ok = skipped = 0
     for jf in json_files:
-        if convert_json(jf, args.img_dir, args.output, kp_order):
+        written, _ = convert_json(jf, args.img_dir, args.output, kp_order)
+        if written:
             ok += 1
         else:
             skipped += 1

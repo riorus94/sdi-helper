@@ -52,6 +52,7 @@ def _write_19kp_json(
     missing: str | None = None,
     unknown: bool = False,
     duplicate: str | None = None,
+    off_frame: str | None = None,
 ):
     shapes: list[dict] = []
     for idx, label in enumerate(DEFAULT_KP_ORDER):
@@ -59,6 +60,8 @@ def _write_19kp_json(
             continue
         x = float(20 + idx * 2)
         y = float(30 + idx)
+        if label == off_frame:
+            y = -20.0  # above the top edge of the 320x160 image
         shapes.append(_point(label, x, y))
     if unknown:
         shapes.append(_point("unknown_label", 10.0, 10.0))
@@ -108,7 +111,9 @@ def test_convert_json_marks_offframe_keypoint_not_labelled(tmp_path) -> None:
     json_path = _write_labelme_json(tmp_path, shapes)  # 200x100 image
     out_dir = tmp_path / "out"
 
-    assert convert_json(json_path, tmp_path, out_dir, DEFAULT_KP_ORDER) is True
+    written, off_frame = convert_json(json_path, tmp_path, out_dir, DEFAULT_KP_ORDER)
+    assert written is True
+    assert off_frame == ["roof_apex"]
 
     kps = _keypoints_from_output(out_dir / "sample.txt")
     roof = kps[0:3]  # roof_apex is index 0 in DEFAULT_KP_ORDER
@@ -131,7 +136,8 @@ def test_5kp_no_roof_derives_ground_ref_from_wheel_ground_points(tmp_path, capsy
     )
     out_dir = tmp_path / "labels"
 
-    assert convert_json(json_path, tmp_path / "images", out_dir, FIVE_KP_NO_ROOF)
+    written, _ = convert_json(json_path, tmp_path / "images", out_dir, FIVE_KP_NO_ROOF)
+    assert written
 
     captured = capsys.readouterr()
     assert "ground_ref" in captured.out
@@ -149,7 +155,8 @@ def test_duplicate_selected_labels_are_reported_and_do_not_overwrite(tmp_path, c
     )
     out_dir = tmp_path / "labels"
 
-    assert convert_json(json_path, tmp_path / "images", out_dir, ["front_wheel_center"])
+    written, _ = convert_json(json_path, tmp_path / "images", out_dir, ["front_wheel_center"])
+    assert written
 
     captured = capsys.readouterr()
     assert "duplicate label 'front_wheel_center'" in captured.out
@@ -188,6 +195,25 @@ def test_convert_accepted_19kp_dataset_rejects_missing_and_unknown_labels(tmp_pa
     assert "missing_required" in reasons["missing.json"]
     assert "unknown_labels" in reasons["unknown.json"]
     assert "duplicate_labels" in reasons["duplicate.json"]
+
+
+def test_convert_accepted_counts_images_with_off_frame_keypoints(tmp_path):
+    input_dir = tmp_path / "accepted"
+    input_dir.mkdir()
+    _write_19kp_json(input_dir, "clean")
+    _write_19kp_json(input_dir, "cropped", off_frame="roof_apex")
+    output_dir = tmp_path / "pose"
+
+    summary = convert_accepted_19kp_dataset(
+        input_dir=input_dir,
+        img_dir=tmp_path / "images",
+        output_dir=output_dir,
+        val_fraction=0.0,
+    )
+
+    assert summary["off_frame_images"] == 1
+    persisted = json.loads((output_dir / "conversion_summary.json").read_text(encoding="utf-8"))
+    assert persisted["off_frame_images"] == 1
 
 
 def test_parse_keypoint_order_supports_side_view_rung_names() -> None:
@@ -270,6 +296,7 @@ def test_convert_accepted_19kp_dataset_writes_holdout_manifest(tmp_path):
         "converted_val": 2,
         "converted_holdout": 2,
         "rejected": 0,
+        "off_frame_images": 0,
         "holdout_manifest": "holdout_manifest.txt",
     }
 
