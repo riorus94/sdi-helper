@@ -73,15 +73,17 @@ bridge that gap:
 1. `agent1-labeling-10m` uploads its screening JSON as a build artifact
    (`labeling-output-<run>`), so the labeling result is retrievable.
 2. `pose-training-20m`'s input selection **prefers** the CLIP-gated screening
-   subset, but **falls back** to the committed raw LabelMe JSON
+   subset, and **falls back** to the committed raw LabelMe JSON
    (`yolo_training/side_view_dataset/labelme_json`, 79 files) when the screening
-   subset is empty. So once images are provisioned from Drive, a GitHub-hosted
-   run trains a real model instead of green-skipping.
+   subset is empty — but **only when the raw fallback is opted in**. The fallback
+   fires only if repo variable `POSE_ALLOW_RAW_FALLBACK=1` is set, or the run is a
+   manual `workflow_dispatch` with `runner_target: github-cpu`. Scheduled runs
+   stay screened-only and skip when the screening subset is empty.
 
 On the GCP runner the screening subset is present, so the fallback never
-triggers and behaviour is unchanged. Training on the raw subset is unscreened
-(no CLIP orientation gate) — fine for bootstrap/CPU verification; promote to
-screened data for production runs.
+triggers and behaviour is unchanged. The raw subset is unscreened (no CLIP
+orientation gate) — opt in for bootstrap/CPU verification only; production runs
+should train on screened data.
 
 > **ZIP note for the fallback path:** the raw JSONs reference image names like
 > `000001.jpg`, so the images you put under `dataset_raw/images/train/side/` in
