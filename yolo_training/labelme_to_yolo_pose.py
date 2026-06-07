@@ -376,6 +376,25 @@ def _derive_ground_ref_for_5kp(
     annotated["ground_ref"] = derived
 
 
+def _normalize_keypoint(
+    x_px: float, y_px: float, W: int, H: int
+) -> tuple[float, float, float, bool]:
+    """Normalize a pixel keypoint to YOLO coords with an off-frame guardrail.
+
+    In-frame points become (x/W, y/H, v=2, in_frame=True). A point outside the
+    image (the landmark was cropped away) is clamped into [0, 1] and marked
+    v=0 (not labelled) so training does not regress toward an off-frame target
+    and the auto-derived bbox is not skewed by it.
+    """
+    x_n = x_px / W
+    y_n = y_px / H
+    if 0.0 <= x_n <= 1.0 and 0.0 <= y_n <= 1.0:
+        return x_n, y_n, 2.0, True
+    clamped_x = min(1.0, max(0.0, x_n))
+    clamped_y = min(1.0, max(0.0, y_n))
+    return clamped_x, clamped_y, 0.0, False
+
+
 def convert_json(
     json_path: pathlib.Path,
     img_dir: pathlib.Path,
@@ -440,17 +459,26 @@ def convert_json(
     kp_flat: list[float] = []
     xs_visible: list[float] = []
     ys_visible: list[float] = []
+    off_frame: list[str] = []
 
     for name in kp_order:
         if name in annotated:
             x_px, y_px = annotated[name]
-            x_n = x_px / W
-            y_n = y_px / H
-            kp_flat += [x_n, y_n, 2.0]   # visibility=2: labelled visible
-            xs_visible.append(x_n)
-            ys_visible.append(y_n)
+            x_n, y_n, v, in_frame = _normalize_keypoint(x_px, y_px, W, H)
+            kp_flat += [x_n, y_n, v]
+            if in_frame:
+                xs_visible.append(x_n)
+                ys_visible.append(y_n)
+            else:
+                off_frame.append(name)
         else:
             kp_flat += [0.0, 0.0, 0.0]   # visibility=0: not labelled
+
+    if off_frame:
+        print(
+            f"  WARN off-frame keypoints in {json_path.name} "
+            f"-> clamped, marked not-labelled: {', '.join(off_frame)}"
+        )
 
     # Auto-derive bounding box from visible keypoint extent (with 2 % padding)
     if not xs_visible:
