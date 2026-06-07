@@ -1,7 +1,7 @@
 .PHONY: install test test-domain test-fast test-slow lint type clean \
 	scrape scrape-run scrape-smoke scrape-side scrape-debug \
 	build-dataset inspect side-holdout-gate side-19kp-evaluate side-19kp-gate \
-	side-rung b1-queue-build b1-19kp-accept b2-readiness-gate
+	side-rung promote-rung b1-queue-build b1-19kp-accept b2-readiness-gate
 
 # Optional CLI args passthrough for scrape-run.
 # Example:
@@ -27,6 +27,15 @@ SIDE_RUNG_IMG ?= yolo_training/side_view_dataset/images/all
 SIDE_RUNG_OUTPUT ?= yolo_training/side_view_dataset/rung_dataset
 SIDE_RUNG_VAL_FRACTION ?= 0.15
 SIDE_RUNG_PYTHON ?= poetry run python
+
+PROMOTE_RUNG ?= 9KP
+PROMOTE_RUNG_MODEL ?= yolo_training/side_view_dataset/rung_dataset/weights/best.pt
+PROMOTE_RUNG_MANIFEST ?= yolo_training/side_view_dataset/rung_dataset/holdout_manifest.txt
+PROMOTE_RUNG_IMG ?= yolo_training/side_view_dataset/rung_dataset/images/holdout
+PROMOTE_RUNG_OUTPUT ?= yolo_training/side_view_dataset/rung_dataset/promotion
+PROMOTE_RUNG_CONF ?= 0.5
+PROMOTE_RUNG_DEVICE ?= cpu
+PROMOTE_RUNG_PYTHON ?= poetry run python
 
 B1_AGENT_REPORT ?= yolo_training/side_view_dataset/b13_agent1_report.csv
 B1_VALIDATION_REPORT ?= yolo_training/side_view_dataset/b13_validation_report.csv
@@ -137,6 +146,23 @@ side-rung:
 		--output "$(SIDE_RUNG_OUTPUT)" \
 		--rung "$(SIDE_RUNG)" \
 		--val-fraction "$(SIDE_RUNG_VAL_FRACTION)"
+
+# Run the promotion workflow for one rung (ADR-004): evaluate the candidate on the
+# rung's holdout, decide promote/hold (per-rung gate is the authority; recommended
+# rung + blockers are advisory), and record the decision + consolidated summary.
+# Holdout draws from the clean/screened rung dataset built by `make side-rung`
+# (off-frame keypoints are already neutralized at build, PR #11), so label-quality
+# issues don't skew the evidence. Exits nonzero on a hold.
+#   make promote-rung PROMOTE_RUNG=9KP PROMOTE_RUNG_MODEL=path/to/best.pt
+promote-rung:
+	$(PROMOTE_RUNG_PYTHON) scripts/run_promotion.py \
+		--model "$(PROMOTE_RUNG_MODEL)" \
+		--manifest "$(PROMOTE_RUNG_MANIFEST)" \
+		--image-dir "$(PROMOTE_RUNG_IMG)" \
+		--target-rung "$(PROMOTE_RUNG)" \
+		--run-dir "$(PROMOTE_RUNG_OUTPUT)" \
+		--confidence-threshold "$(PROMOTE_RUNG_CONF)" \
+		--device "$(PROMOTE_RUNG_DEVICE)"
 
 # Build the B1 side-view verification queue from Agent 1 + validation reports.
 b1-queue-build:
