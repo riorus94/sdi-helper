@@ -1,7 +1,7 @@
 .PHONY: install test test-domain test-fast test-slow lint type clean \
 	scrape scrape-run scrape-smoke scrape-side scrape-debug \
 	build-dataset inspect side-holdout-gate side-19kp-evaluate side-19kp-gate \
-	b1-queue-build b1-19kp-accept b2-readiness-gate
+	side-rung b1-queue-build b1-19kp-accept b2-readiness-gate
 
 # Optional CLI args passthrough for scrape-run.
 # Example:
@@ -20,6 +20,13 @@ SIDE_19KP_MANIFEST ?= yolo_training/runs/side_view_pose_19kp_candidate/holdout_m
 SIDE_19KP_OUTPUT ?= yolo_training/runs/side_view_pose_19kp_candidate
 SIDE_19KP_DEVICE ?= cpu
 SIDE_19KP_PYTHON ?= poetry run python
+
+SIDE_RUNG ?= 9KP
+SIDE_RUNG_INPUT ?= yolo_training/side_view_dataset/labelme_json
+SIDE_RUNG_IMG ?= yolo_training/side_view_dataset/images/all
+SIDE_RUNG_OUTPUT ?= yolo_training/side_view_dataset/rung_dataset
+SIDE_RUNG_VAL_FRACTION ?= 0.15
+SIDE_RUNG_PYTHON ?= poetry run python
 
 B1_AGENT_REPORT ?= yolo_training/side_view_dataset/b13_agent1_report.csv
 B1_VALIDATION_REPORT ?= yolo_training/side_view_dataset/b13_validation_report.csv
@@ -116,6 +123,20 @@ side-19kp-gate:
 		--evidence "$(SIDE_19KP_SUMMARY)" \
 		--evidence "$(SIDE_19KP_EVIDENCE)" \
 		--evidence "$(SIDE_19KP_MODEL)"
+
+# Build the side-view pose dataset for one progressive rung (ADR-004 ladder).
+# Validates the source labels first, then converts to the rung's kpt_shape/flip_idx.
+#   make side-rung SIDE_RUNG=9KP
+side-rung:
+	$(SIDE_RUNG_PYTHON) scripts/validate_keypoints.py \
+		--json-dir "$(SIDE_RUNG_INPUT)" \
+		--report "$(SIDE_RUNG_OUTPUT)/validation_report.csv"
+	$(SIDE_RUNG_PYTHON) scripts/build_side_rung_dataset.py \
+		--input "$(SIDE_RUNG_INPUT)" \
+		--img-dir "$(SIDE_RUNG_IMG)" \
+		--output "$(SIDE_RUNG_OUTPUT)" \
+		--rung "$(SIDE_RUNG)" \
+		--val-fraction "$(SIDE_RUNG_VAL_FRACTION)"
 
 # Build the B1 side-view verification queue from Agent 1 + validation reports.
 b1-queue-build:
