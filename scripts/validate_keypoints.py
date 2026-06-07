@@ -190,6 +190,22 @@ def _extract_points(data: dict[str, Any]) -> tuple[dict[str, tuple[float, float]
     return points, confidences
 
 
+def _out_of_frame_keypoints(
+    points: dict[str, tuple[float, float]], width: float, height: float
+) -> list[str]:
+    """Labels whose pixel coordinates fall outside the image bounds.
+
+    Returns [] when image dimensions are unknown (cannot judge bounds).
+    """
+    if not width or not height:
+        return []
+    return sorted(
+        label
+        for label, (x, y) in points.items()
+        if x < 0 or x > width or y < 0 or y > height
+    )
+
+
 def _classify_status(missing: list[str], warnings: list[str]) -> str:
     if missing:
         return "INVALID"
@@ -256,6 +272,12 @@ def validate_file(
         warnings.append(f"missing_required: {', '.join(missing_keypoints)}")
     if extra_keypoints:
         warnings.append(f"extra_keypoints: {', '.join(extra_keypoints)}")
+
+    out_of_frame = _out_of_frame_keypoints(
+        points, data.get("imageWidth", 0) or 0, data.get("imageHeight", 0) or 0
+    )
+    if out_of_frame:
+        warnings.append(f"out_of_frame: {', '.join(out_of_frame)}")
 
     # Confidence triage from Agent 1 metadata, when present.
     for kp in REQUIRED_KEYPOINTS:
