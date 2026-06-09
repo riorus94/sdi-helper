@@ -1,11 +1,14 @@
-name: Pose Training Every 20 Minutes (5KP No Roof Apex)
+name: Pose Training (Nightly, 5KP No Roof Apex)
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    # 19:00 UTC = 02:00 WIB daily. The dataset only changes as new annotations
+    # land, so a nightly full retrain is the right cadence; the old */20 cron was
+    # just for a trial. Trigger ad-hoc retrains via workflow_dispatch.
+    - cron: '0 19 * * *'
   workflow_dispatch:
     inputs:
       runner_target:
