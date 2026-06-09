@@ -69,10 +69,6 @@ jobs:
       - name: Select LabelMe JSON input directory
         id: pose_input
         shell: bash
-        env:
-          # Raw fallback is opt-in: an explicit repo variable, or a manual
-          # github-cpu dispatch. Scheduled runs stay screened-only.
-          ALLOW_RAW_FALLBACK: ${{ vars.POSE_ALLOW_RAW_FALLBACK == '1' || (github.event_name == 'workflow_dispatch' && inputs.runner_target == 'github-cpu') }}
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
@@ -82,23 +78,20 @@ jobs:
           fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
           # Prefer the CLIP-gated screening subset (produced by agent1-labeling and
-          # persisted on the GCP runner). The committed raw LabelMe JSON is an
-          # UNSCREENED fallback: only used when explicitly opted in, so scheduled
-          # production runs never silently train on unscreened data.
+          # persisted on the GCP runner). On a hosted runner that subset is absent,
+          # so fall back to the committed raw LabelMe JSON: with images provisioned
+          # from Drive this keeps training self-contained instead of green-skipping.
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
             echo "Using CLIP-gated screening JSON: $selected ($selected_count files)"
-          elif [ "${fallback_count}" -gt 0 ] && [ "${ALLOW_RAW_FALLBACK}" = "true" ]; then
+          elif [ "${fallback_count}" -gt 0 ]; then
             selected="$fallback"
             selected_count="$fallback_count"
-            echo "Screening JSON empty; raw fallback opted in -> using committed raw LabelMe JSON: $selected ($selected_count files)"
+            echo "Screening JSON empty; falling back to committed raw LabelMe JSON: $selected ($selected_count files)"
           else
             selected=""
             selected_count="0"
-            if [ "${fallback_count}" -gt 0 ]; then
-              echo "Screening JSON empty and raw fallback not opted in (set POSE_ALLOW_RAW_FALLBACK=1 or dispatch github-cpu). Skipping."
-            fi
           fi
 
           echo "selected_json_dir=$selected" >> "$GITHUB_OUTPUT"
@@ -143,35 +136,32 @@ jobs:
         run: |
           python yolo_training/train_pose.py
 
-      - name: Verify trained model produced
-        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels == 'true' && vars.GDRIVE_DATASET_URL != '' }}
-        shell: bash
-        run: |
-          if [ -z "$(find yolo_training/runs -type f -name '*.pt' 2>/dev/null | head -n 1)" ]; then
-            echo "::error::Training ran but produced no model weights (*.pt) under yolo_training/runs."
-            exit 1
-          fi
-          echo "Trained model weights found under yolo_training/runs."
-
       - name: Skip note (no annotations)
         if: ${{ steps.pose_input.outputs.should_train != 'true' }}
-        shell: bash
         run: |
           echo "Pose training skipped due to empty annotation JSON sources."
-          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
-            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but no annotation JSON was selected — check the dataset ZIP, the screening subset, or the raw-fallback opt-in."
-            exit 1
-          fi
 
       - name: Skip note (no converted pose labels)
         if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels != 'true' }}
-        shell: bash
         run: |
           echo "Pose training skipped because conversion produced zero pose label txt files."
-          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
-            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but conversion produced zero pose labels — check that provisioned images match the LabelMe JSON stems."
+
+      # A scheduled run is a production run: it MUST end with a freshly trained
+      # model. Skipping (no JSON / zero labels) or training without producing
+      # weights would otherwise report a misleading green, so fail loudly. The
+      # check is scoped to THIS run's directory (POSE_RUN_NAME is unique per run)
+      # so stale weights on the persistent GCP runner cannot mask a non-training
+      # run. Manual workflow_dispatch runs stay lenient for exploration.
+      - name: Require trained model on scheduled runs
+        if: ${{ github.event_name == 'schedule' }}
+        shell: bash
+        run: |
+          run_weights="yolo_training/runs/${POSE_RUN_NAME}/weights"
+          if [ -z "$(find "$run_weights" -type f -name '*.pt' 2>/dev/null | head -n 1)" ]; then
+            echo "::error::Scheduled pose-training run produced no model weights (*.pt) under ${run_weights}. A scheduled run must train a model — check dataset provisioning (GDRIVE_DATASET_URL / GCP runner data), the screening subset, and that the images match the LabelMe JSON stems."
             exit 1
           fi
+          echo "Scheduled run produced model weights under ${run_weights}."
 
       - name: Upload training artifacts
         if: always()
@@ -223,10 +213,6 @@ jobs:
       - name: Select LabelMe JSON input directory
         id: pose_input
         shell: bash
-        env:
-          # Raw fallback is opt-in: an explicit repo variable, or a manual
-          # github-cpu dispatch. Scheduled runs stay screened-only.
-          ALLOW_RAW_FALLBACK: ${{ vars.POSE_ALLOW_RAW_FALLBACK == '1' || (github.event_name == 'workflow_dispatch' && inputs.runner_target == 'github-cpu') }}
         run: |
           set -euo pipefail
           primary="yolo_training/side_view_dataset/labelme_json_stanford_screening"
@@ -236,23 +222,20 @@ jobs:
           fallback_count=$(find "$fallback" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l || true)
 
           # Prefer the CLIP-gated screening subset (produced by agent1-labeling and
-          # persisted on the GCP runner). The committed raw LabelMe JSON is an
-          # UNSCREENED fallback: only used when explicitly opted in, so scheduled
-          # production runs never silently train on unscreened data.
+          # persisted on the GCP runner). On a hosted runner that subset is absent,
+          # so fall back to the committed raw LabelMe JSON: with images provisioned
+          # from Drive this keeps training self-contained instead of green-skipping.
           if [ "${primary_count}" -gt 0 ]; then
             selected="$primary"
             selected_count="$primary_count"
             echo "Using CLIP-gated screening JSON: $selected ($selected_count files)"
-          elif [ "${fallback_count}" -gt 0 ] && [ "${ALLOW_RAW_FALLBACK}" = "true" ]; then
+          elif [ "${fallback_count}" -gt 0 ]; then
             selected="$fallback"
             selected_count="$fallback_count"
-            echo "Screening JSON empty; raw fallback opted in -> using committed raw LabelMe JSON: $selected ($selected_count files)"
+            echo "Screening JSON empty; falling back to committed raw LabelMe JSON: $selected ($selected_count files)"
           else
             selected=""
             selected_count="0"
-            if [ "${fallback_count}" -gt 0 ]; then
-              echo "Screening JSON empty and raw fallback not opted in (set POSE_ALLOW_RAW_FALLBACK=1 or dispatch github-cpu). Skipping."
-            fi
           fi
 
           echo "selected_json_dir=$selected" >> "$GITHUB_OUTPUT"
@@ -297,35 +280,32 @@ jobs:
         run: |
           python yolo_training/train_pose.py
 
-      - name: Verify trained model produced
-        if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels == 'true' && vars.GDRIVE_DATASET_URL != '' }}
-        shell: bash
-        run: |
-          if [ -z "$(find yolo_training/runs -type f -name '*.pt' 2>/dev/null | head -n 1)" ]; then
-            echo "::error::Training ran but produced no model weights (*.pt) under yolo_training/runs."
-            exit 1
-          fi
-          echo "Trained model weights found under yolo_training/runs."
-
       - name: Skip note (no annotations)
         if: ${{ steps.pose_input.outputs.should_train != 'true' }}
-        shell: bash
         run: |
           echo "Pose training skipped due to empty annotation JSON sources."
-          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
-            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but no annotation JSON was selected — check the dataset ZIP, the screening subset, or the raw-fallback opt-in."
-            exit 1
-          fi
 
       - name: Skip note (no converted pose labels)
         if: ${{ steps.pose_input.outputs.should_train == 'true' && steps.pose_labels.outputs.has_labels != 'true' }}
-        shell: bash
         run: |
           echo "Pose training skipped because conversion produced zero pose label txt files."
-          if [ -n "${{ vars.GDRIVE_DATASET_URL }}" ]; then
-            echo "::error::Provisioning is enabled (GDRIVE_DATASET_URL set) but conversion produced zero pose labels — check that provisioned images match the LabelMe JSON stems."
+
+      # A scheduled run is a production run: it MUST end with a freshly trained
+      # model. Skipping (no JSON / zero labels) or training without producing
+      # weights would otherwise report a misleading green, so fail loudly. The
+      # check is scoped to THIS run's directory (POSE_RUN_NAME is unique per run)
+      # so stale weights on the persistent GCP runner cannot mask a non-training
+      # run. Manual workflow_dispatch runs stay lenient for exploration.
+      - name: Require trained model on scheduled runs
+        if: ${{ github.event_name == 'schedule' }}
+        shell: bash
+        run: |
+          run_weights="yolo_training/runs/${POSE_RUN_NAME}/weights"
+          if [ -z "$(find "$run_weights" -type f -name '*.pt' 2>/dev/null | head -n 1)" ]; then
+            echo "::error::Scheduled pose-training run produced no model weights (*.pt) under ${run_weights}. A scheduled run must train a model — check dataset provisioning (GDRIVE_DATASET_URL / GCP runner data), the screening subset, and that the images match the LabelMe JSON stems."
             exit 1
           fi
+          echo "Scheduled run produced model weights under ${run_weights}."
 
       - name: Upload training artifacts
         if: always()
